@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <title>Product Form - RevShop</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f4f4f9;
+    }
+
+    .form-container {
+      background: white;
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      width: 400px;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: .5rem;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      padding: .5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      width: 100%;
+      padding: .75rem;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="form-container">
+    <h2 th:text="${product.id == null ? 'Add Product' : 'Edit Product'}">Product Form</h2>
+    <form th:action="${product.id == null ? '/products/save' : '/products/update'}" th:object="${product}"
+      method="post">
+      <input type="hidden" th:field="*{id}" />
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" th:field="*{name}" required />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea th:field="*{description}"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select th:field="*{category.id}">
+          <option th:each="cat : ${categories}" th:value="${cat.id}" th:text="${cat.name}"></option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>MRP (Base Price)</label>
+        <input type="number" step="0.01" th:field="*{price}" required />
+      </div>
+      <div class="form-group">
+        <label>Selling Price (Discounted Price)</label>
+        <input type="number" step="0.01" th:field="*{discountedPrice}" />
+      </div>
+      <div class="form-group">
+        <label>Quantity</label>
+        <input type="number" th:field="*{quantity}" required />
+      </div>
+      <div class="form-group">
+        <label>Low Stock Threshold</label>
+        <input type="number" th:field="*{stockThreshold}" />
+      </div>
+      <button type="submit" th:text="${product.id == null ? 'Save Product' : 'Update Product'}">Submit</button>
+    </form>
+    <a href="/products">Cancel</a>
+  </div>
+</body>
+
+</html>
