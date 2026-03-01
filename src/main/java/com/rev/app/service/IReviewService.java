@@ -5,7 +5,7 @@ import com.rev.app.entity.Review;
 import java.util.List;
 import java.util.Optional;
 
-public interface ReviewService {
+public interface IReviewService {
 
     Review addReview(Review review);
 

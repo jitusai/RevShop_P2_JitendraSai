@@ -3,7 +3,7 @@ package com.rev.app.service;
 import com.rev.app.entity.Favorite;
 import java.util.List;
 
-public interface FavoriteService {
+public interface IFavoriteService {
 
     Favorite addFavorite(Favorite favorite);
 

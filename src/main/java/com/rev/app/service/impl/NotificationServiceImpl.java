@@ -2,7 +2,7 @@ package com.rev.app.service.impl;
 
 import com.rev.app.entity.Notification;
 import com.rev.app.repository.NotificationRepository;
-import com.rev.app.service.NotificationService;
+import com.rev.app.service.INotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -10,7 +10,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class NotificationServiceImpl implements NotificationService {
+public class NotificationServiceImpl implements INotificationService {
 
     private final NotificationRepository notificationRepository;
 

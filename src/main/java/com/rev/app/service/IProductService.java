@@ -6,7 +6,7 @@ import com.rev.app.entity.Product;
 import java.util.List;
 import java.util.Optional;
 
-public interface ProductService {
+public interface IProductService {
 
     Product addProduct(Product product);
 

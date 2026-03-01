@@ -4,7 +4,7 @@ import com.rev.app.dto.CartDTO;
 
 import java.util.Optional;
 
-public interface CartService {
+public interface ICartService {
 
     CartDTO createCart(CartDTO cartDTO);
 

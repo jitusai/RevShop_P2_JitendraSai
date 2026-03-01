@@ -5,7 +5,7 @@ import com.rev.app.entity.User;
 import com.rev.app.entity.enums.Role;
 import com.rev.app.mapper.UserMapper;
 import com.rev.app.repository.UserRepository;
-import com.rev.app.service.UserService;
+import com.rev.app.service.IUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -14,7 +14,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl implements IUserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -38,6 +38,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public Optional<UserDTO> findByEmail(String email) {
         return userRepository.findByEmail(email).map(UserMapper::toDTO);
+    }
+
+    @Override
+    public boolean existsByName(String name) {
+        return userRepository.findByName(name).isPresent();
     }
 
     @Override
@@ -80,12 +85,4 @@ public class UserServiceImpl implements UserService {
         });
     }
 
-    @Override
-    public boolean hasDeliveredOrderForProduct(Long buyerId, Long productId) {
-        // This should actually be in OrderService, but since it's in UserService
-        // interface...
-        // Wait, I see it's also in OrderService. I'll just leave it for now or
-        // implement if needed.
-        return false;
-    }
 }

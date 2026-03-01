@@ -1,12 +1,12 @@
 package com.rev.app.service.impl;
 
 import com.rev.app.dto.ProductDTO;
-import com.rev.app.entity.Product;
 import com.rev.app.mapper.ProductMapper;
 import com.rev.app.repository.CategoryRepository;
 import com.rev.app.repository.ProductRepository;
 import com.rev.app.repository.UserRepository;
-import com.rev.app.service.ProductService;
+import com.rev.app.service.INotificationService;
+import com.rev.app.service.IProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,12 +17,12 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class ProductServiceImpl implements ProductService {
+public class ProductServiceImpl implements IProductService {
 
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
-    private final com.rev.app.service.NotificationService notificationService;
+    private final INotificationService INotificationService;
 
     @Override
     public com.rev.app.entity.Product addProduct(com.rev.app.entity.Product product) {
@@ -39,7 +39,7 @@ public class ProductServiceImpl implements ProductService {
                 notification.setMessage(
                         "⚠️ Low Stock Alert: " + product.getName() + " has only " + product.getQuantity() + " left.");
                 notification.setReadStatus(false);
-                notificationService.sendNotification(notification);
+                INotificationService.sendNotification(notification);
             }
         }
     }
@@ -105,7 +105,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<ProductDTO> getNewArrivals() {
-        return productRepository.findTop8ByOrderByIdDesc().stream()
+        java.time.LocalDateTime yesterday = java.time.LocalDateTime.now().minusHours(24);
+        return productRepository.findTop8ByCreatedAtAfterOrderByIdDesc(yesterday).stream()
                 .map(ProductMapper::toDTO)
                 .collect(Collectors.toList());
     }

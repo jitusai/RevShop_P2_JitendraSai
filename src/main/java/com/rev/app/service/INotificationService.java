@@ -4,7 +4,7 @@ import com.rev.app.entity.Notification;
 
 import java.util.List;
 
-public interface NotificationService {
+public interface INotificationService {
 
     void sendNotification(Notification notification);
 

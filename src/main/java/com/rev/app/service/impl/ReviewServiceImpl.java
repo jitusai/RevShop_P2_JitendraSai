@@ -6,7 +6,7 @@ import com.rev.app.entity.Product;
 import com.rev.app.repository.ReviewRepository;
 import com.rev.app.repository.UserRepository;
 import com.rev.app.repository.ProductRepository;
-import com.rev.app.service.ReviewService;
+import com.rev.app.service.IReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +16,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @org.springframework.transaction.annotation.Transactional
-public class ReviewServiceImpl implements ReviewService {
+public class ReviewServiceImpl implements IReviewService {
 
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;

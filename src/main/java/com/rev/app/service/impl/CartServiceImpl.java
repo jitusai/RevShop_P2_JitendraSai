@@ -7,8 +7,8 @@ import com.rev.app.entity.User;
 import com.rev.app.repository.CartRepository;
 import com.rev.app.repository.ProductRepository;
 import com.rev.app.repository.UserRepository;
-import com.rev.app.service.CartService;
-import com.rev.app.service.UserService;
+import com.rev.app.service.ICartService;
+import com.rev.app.service.IUserService;
 import com.rev.app.dto.CartDTO;
 import com.rev.app.mapper.CartMapper;
 import com.rev.app.mapper.UserMapper;
@@ -22,16 +22,16 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class CartServiceImpl implements CartService {
+public class CartServiceImpl implements ICartService {
 
     private final CartRepository cartRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
-    private final UserService userService;
+    private final IUserService IUserService;
 
     @Override
     public CartDTO createCart(CartDTO cartDTO) {
-        User user = userService.findById(cartDTO.getUserId())
+        User user = IUserService.findById(cartDTO.getUserId())
                 .map(UserMapper::toEntity)
                 .orElse(null);
         Cart cart = CartMapper.toEntity(cartDTO);
@@ -46,7 +46,7 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public CartDTO saveCart(CartDTO cartDTO) {
-        User user = userService.findById(cartDTO.getUserId())
+        User user = IUserService.findById(cartDTO.getUserId())
                 .map(UserMapper::toEntity)
                 .orElse(null);
         Cart cart = CartMapper.toEntity(cartDTO);

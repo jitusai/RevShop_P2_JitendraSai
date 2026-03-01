@@ -1,197 +1,73 @@
 package com.rev.app.service.impl;
 
 import com.rev.app.dto.CartItemDTO;
+import com.rev.app.dto.OrderDTO;
+import com.rev.app.dto.OrderItemDTO;
+import com.rev.app.dto.UserDTO;
 import com.rev.app.entity.*;
 import com.rev.app.entity.enums.OrderStatus;
 import com.rev.app.entity.enums.PaymentMethod;
 import com.rev.app.entity.enums.PaymentStatus;
-import com.rev.app.repository.OrderRepository;
-import com.rev.app.repository.ProductRepository;
-import com.rev.app.service.NotificationService;
-import com.rev.app.service.OrderService;
-import com.rev.app.service.ProductService;
-import com.rev.app.service.UserService;
-import com.rev.app.exception.ResourceNotFoundException;
 import com.rev.app.exception.InsufficientStockException;
-import com.rev.app.dto.OrderDTO;
-import com.rev.app.dto.UserDTO;
+import com.rev.app.exception.ResourceNotFoundException;
 import com.rev.app.mapper.OrderMapper;
 import com.rev.app.mapper.UserMapper;
+import com.rev.app.repository.OrderRepository;
+import com.rev.app.repository.ProductRepository;
+import com.rev.app.service.INotificationService;
+import com.rev.app.service.IOrderService;
+import com.rev.app.service.IUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
-public class OrderServiceImpl implements OrderService {
+public class OrderServiceImpl implements IOrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
-    private final NotificationService notificationService;
-    private final ProductService productService;
-    private final UserService userService;
+    private final INotificationService INotificationService;
+    private final IUserService IUserService;
 
     @Override
     @Transactional
     public OrderDTO placeOrder(OrderDTO orderDTO) {
-        // Validation: Stock check
+        UserDTO buyerDTO = IUserService.findById(orderDTO.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + orderDTO.getUserId()));
+
+        List<CartItemDTO> cartItems = new ArrayList<>();
         if (orderDTO.getItems() != null) {
-            for (var itemDTO : orderDTO.getItems()) {
-                Product p = productRepository.findById(itemDTO.getProductId())
-                        .orElseThrow(
-                                () -> new ResourceNotFoundException("Product not found: " + itemDTO.getProductId()));
-                if (p.getQuantity() == null || p.getQuantity() < itemDTO.getQuantity()) {
-                    throw new InsufficientStockException("Insufficient stock for product: " + p.getName());
-                }
+            for (OrderItemDTO i : orderDTO.getItems()) {
+                CartItemDTO item = new CartItemDTO();
+                item.setProductId(i.getProductId());
+                item.setQuantity(i.getQuantity());
+                cartItems.add(item);
             }
         }
 
-        // Logic handled usually by mapping back to entity or custom assembly
-        // Since placeOrder(Order) was the core, let's keep it but internal or adapted
-        // For now, let's adapt it to use Mapper
-        User buyer = userService.findById(orderDTO.getUserId())
-                .map(UserMapper::toEntity)
-                .orElse(null);
-
-        Order order = OrderMapper.toEntity(orderDTO, buyer);
-        // Assemble items
-        if (orderDTO.getItems() != null) {
-            List<OrderItem> items = new ArrayList<>();
-            for (var itemDTO : orderDTO.getItems()) {
-                Product p = productRepository.findById(itemDTO.getProductId()).orElse(null);
-                if (p != null) {
-                    items.add(OrderItem.builder()
-                            .order(order)
-                            .product(p)
-                            .quantity(itemDTO.getQuantity())
-                            .price(java.math.BigDecimal.valueOf(itemDTO.getPrice()))
-                            .build());
-                }
-            }
-            order.setItems(items);
-        }
-
-        // Ensure status is PENDING by default
-        if (order.getStatus() == null) {
-            order.setStatus(OrderStatus.PENDING);
-        }
-        Order saved = orderRepository.save(order);
-
-        // Notify Buyer
-        if (saved.getBuyer() != null) {
-            Notification buyerNotification = new Notification();
-            buyerNotification.setUser(saved.getBuyer());
-            buyerNotification.setMessage("🎉 Success! Your order #" + saved.getId() + " has been placed.");
-            buyerNotification.setReadStatus(false);
-            notificationService.sendNotification(buyerNotification);
-        }
-
-        // Notify each unique seller whose products are in this order
-        if (saved.getItems() != null) {
-            Set<Long> notifiedSellerIds = new HashSet<>();
-            for (OrderItem item : saved.getItems()) {
-                Product product = item.getProduct();
-                if (product != null && product.getSeller() != null) {
-                    Long sellerId = product.getSeller().getId();
-                    if (notifiedSellerIds.add(sellerId)) {
-                        Notification notification = new Notification();
-                        notification.setUser(product.getSeller());
-                        notification.setMessage("📦 New order received! Order #" + saved.getId()
-                                + " — " + product.getName()
-                                + (saved.getBuyer() != null ? " from " + saved.getBuyer().getName() : ""));
-                        notification.setReadStatus(false);
-                        notificationService.sendNotification(notification);
-                    }
-                }
-            }
-        }
-
-        return OrderMapper.toDTO(saved);
+        return placeOrder(buyerDTO, cartItems, orderDTO.getPaymentMethod(), orderDTO.getShippingAddress());
     }
 
     @Override
     @Transactional
     public OrderDTO placeOrder(UserDTO buyerDTO, Long productId, Integer quantity, String paymentMethodStr,
             String address) {
-        User buyer = UserMapper.toEntity(buyerDTO);
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
-
-        if (product.getQuantity() == null || product.getQuantity() < quantity) {
-            throw new InsufficientStockException("Insufficient stock for product: " + product.getName());
-        }
-
-        BigDecimal unitPrice = product.getDiscountedPrice() != null ? product.getDiscountedPrice() : product.getPrice();
-        BigDecimal total = unitPrice.multiply(new BigDecimal(quantity));
-
-        Order order = new Order();
-        order.setBuyer(buyer);
-        order.setStatus(OrderStatus.PENDING);
-        order.setTotalAmount(total);
-        order.setShippingAddress(address);
-
-        OrderItem item = OrderItem.builder()
-                .order(order)
-                .product(product)
-                .quantity(quantity)
-                .price(unitPrice)
-                .build();
-        order.setItems(new ArrayList<>(List.of(item)));
-
-        PaymentMethod method;
-        try {
-            method = PaymentMethod.valueOf(paymentMethodStr);
-        } catch (Exception e) {
-            method = PaymentMethod.CASH_ON_DELIVERY;
-        }
-
-        Payment payment = Payment.builder()
-                .order(order)
-                .method(method)
-                .status(method == PaymentMethod.CASH_ON_DELIVERY ? PaymentStatus.INITIATED : PaymentStatus.SUCCESS)
-                .amount(total)
-                .build();
-        order.setPayment(payment);
-
-        if (address != null && !address.isBlank()) {
-            buyer.setAddress(address);
-            userService.saveUser(UserMapper.toDTO(buyer));
-        }
-
-        // Update Stock
-        product.setQuantity(product.getQuantity() - quantity);
-        productRepository.save(product);
-
-        // Logic for placeOrder(order)
-        Order saved = orderRepository.save(order);
-
-        // Notifications... simplified or call the other one?
-        // Let's just return via DTO
-        return OrderMapper.toDTO(saved);
+        CartItemDTO item = new CartItemDTO();
+        item.setProductId(productId);
+        item.setQuantity(quantity);
+        return placeOrder(buyerDTO, List.of(item), paymentMethodStr, address);
     }
 
     @Override
     @Transactional
     public OrderDTO placeOrder(UserDTO buyerDTO, List<CartItemDTO> items, String paymentMethodStr, String address) {
         User buyer = UserMapper.toEntity(buyerDTO);
+        validateStock(items);
 
-        // Stock validation
-        for (CartItemDTO cartItem : items) {
-            Product p = productRepository.findById(cartItem.getProductId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + cartItem.getProductId()));
-            if (p.getQuantity() == null || p.getQuantity() < cartItem.getQuantity()) {
-                throw new InsufficientStockException("Insufficient stock for product: " + p.getName());
-            }
-        }
-
-        // Build order
         Order order = new Order();
         order.setBuyer(buyer);
         order.setStatus(OrderStatus.PENDING);
@@ -200,58 +76,93 @@ public class OrderServiceImpl implements OrderService {
         List<OrderItem> orderItems = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
         for (CartItemDTO cartItem : items) {
-            Product p = productRepository.findById(cartItem.getProductId()).orElse(null);
-            if (p == null)
-                continue;
+            Product p = productRepository.findById(cartItem.getProductId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + cartItem.getProductId()));
+
             BigDecimal unitPrice = p.getDiscountedPrice() != null ? p.getDiscountedPrice() : p.getPrice();
             total = total.add(unitPrice.multiply(new BigDecimal(cartItem.getQuantity())));
+
             orderItems.add(OrderItem.builder()
                     .order(order)
                     .product(p)
                     .quantity(cartItem.getQuantity())
                     .price(unitPrice)
                     .build());
+
+            // Atomically decrement stock
+            p.setQuantity(p.getQuantity() - cartItem.getQuantity());
+            productRepository.save(p);
         }
         order.setTotalAmount(total);
         order.setItems(orderItems);
 
-        // Build payment
-        PaymentMethod method;
-        try {
-            method = PaymentMethod.valueOf(paymentMethodStr);
-        } catch (Exception e) {
-            method = PaymentMethod.CASH_ON_DELIVERY;
-        }
+        PaymentMethod method = parsePaymentMethod(paymentMethodStr);
+        PaymentStatus initialStatus = (method == PaymentMethod.CASH_ON_DELIVERY) ? PaymentStatus.INITIATED
+                : PaymentStatus.SUCCESS;
+
         Payment payment = Payment.builder()
                 .order(order)
                 .method(method)
-                .status(method == PaymentMethod.CASH_ON_DELIVERY ? PaymentStatus.INITIATED : PaymentStatus.SUCCESS)
+                .status(initialStatus)
                 .amount(total)
                 .build();
         order.setPayment(payment);
 
-        // Update buyer address
-        // Update Stock
-        for (CartItemDTO cartItem : items) {
-            Product p = productRepository.findById(cartItem.getProductId()).orElse(null);
-            if (p != null) {
-                p.setQuantity(p.getQuantity() - cartItem.getQuantity());
-                productRepository.save(p);
-            }
-        }
+        updateBuyerAddress(buyer, address);
 
         Order saved = orderRepository.save(order);
+        sendOrderNotifications(saved);
 
-        // Notify buyer
+        return OrderMapper.toDTO(saved);
+    }
+
+    private void validateStock(List<CartItemDTO> items) {
+        for (CartItemDTO item : items) {
+            Product p = productRepository.findById(item.getProductId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + item.getProductId()));
+            if (p.getQuantity() == null || p.getQuantity() < item.getQuantity()) {
+                throw new InsufficientStockException("Insufficient stock for product: " + p.getName());
+            }
+        }
+    }
+
+    private PaymentMethod parsePaymentMethod(String methodStr) {
+        try {
+            return PaymentMethod.valueOf(methodStr);
+        } catch (Exception e) {
+            return PaymentMethod.CASH_ON_DELIVERY;
+        }
+    }
+
+    private void updateBuyerAddress(User buyer, String address) {
+        if (address != null && !address.isBlank()) {
+            boolean addressExists = address.equals(buyer.getAddress());
+            if (!addressExists && buyer.getAdditionalAddresses() != null) {
+                addressExists = buyer.getAdditionalAddresses().contains(address);
+            }
+            if (!addressExists) {
+                if (buyer.getAddress() == null || buyer.getAddress().isBlank()) {
+                    buyer.setAddress(address);
+                } else {
+                    if (buyer.getAdditionalAddresses() == null) {
+                        buyer.setAdditionalAddresses(new ArrayList<>());
+                    }
+                    buyer.getAdditionalAddresses().add(address);
+                }
+                IUserService.saveUser(UserMapper.toDTO(buyer));
+            }
+        }
+    }
+
+    private void sendOrderNotifications(Order saved) {
         if (saved.getBuyer() != null) {
             Notification buyerNotification = new Notification();
             buyerNotification.setUser(saved.getBuyer());
             buyerNotification.setMessage("🎉 Success! Your order #" + saved.getId() + " has been placed.");
             buyerNotification.setReadStatus(false);
-            notificationService.sendNotification(buyerNotification);
+            INotificationService.sendNotification(buyerNotification);
         }
 
-        // Notify sellers
         if (saved.getItems() != null) {
             Set<Long> notifiedSellerIds = new HashSet<>();
             for (OrderItem item : saved.getItems()) {
@@ -265,13 +176,11 @@ public class OrderServiceImpl implements OrderService {
                                 + " — " + product.getName()
                                 + (saved.getBuyer() != null ? " from " + saved.getBuyer().getName() : ""));
                         notification.setReadStatus(false);
-                        notificationService.sendNotification(notification);
+                        INotificationService.sendNotification(notification);
                     }
                 }
             }
         }
-
-        return OrderMapper.toDTO(saved);
     }
 
     @Override
@@ -281,30 +190,25 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public List<OrderDTO> findByBuyerId(Long buyerId) {
-        return orderRepository.findAll().stream()
-                .filter(o -> o.getBuyer() != null && o.getBuyer().getId().equals(buyerId))
+        return orderRepository.findByBuyerId(buyerId).stream()
                 .map(OrderMapper::toDTO)
-                .collect(java.util.stream.Collectors.toList());
+                .toList();
     }
 
     @Override
     public List<OrderDTO> findBySellerId(Long sellerId) {
         return orderRepository.findAllBySellerId(sellerId).stream()
                 .map(OrderMapper::toDTO)
-                .collect(java.util.stream.Collectors.toList());
+                .toList();
     }
 
     @Override
     public List<OrderDTO> findAllOrders() {
         return orderRepository.findAll().stream()
                 .map(OrderMapper::toDTO)
-                .collect(java.util.stream.Collectors.toList());
+                .toList();
     }
 
-    /**
-     * Updates the order status. When status transitions to DELIVERED,
-     * decrements each product's inventory quantity by the ordered amount.
-     */
     @Override
     @Transactional
     public OrderDTO updateStatus(Long orderId, OrderStatus newStatus) {
@@ -314,7 +218,6 @@ public class OrderServiceImpl implements OrderService {
         OrderStatus previousStatus = order.getStatus();
         order.setStatus(newStatus);
 
-        // Stock management when status changes to CANCELLED
         if (newStatus == OrderStatus.CANCELLED && previousStatus != OrderStatus.CANCELLED) {
             if (order.getItems() != null) {
                 for (OrderItem item : order.getItems()) {
@@ -331,13 +234,12 @@ public class OrderServiceImpl implements OrderService {
 
         Order savedOrder = orderRepository.save(order);
 
-        // Notify buyer about the status change
         if (newStatus != previousStatus && order.getBuyer() != null) {
             Notification notification = new Notification();
             notification.setUser(order.getBuyer());
             notification.setMessage("📋 Your order #" + order.getId() + " status is now: " + newStatus);
             notification.setReadStatus(false);
-            notificationService.sendNotification(notification);
+            INotificationService.sendNotification(notification);
         }
 
         return OrderMapper.toDTO(savedOrder);

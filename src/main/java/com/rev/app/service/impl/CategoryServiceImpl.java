@@ -2,7 +2,7 @@ package com.rev.app.service.impl;
 
 import com.rev.app.entity.Category;
 import com.rev.app.repository.CategoryRepository;
-import com.rev.app.service.CategoryService;
+import com.rev.app.service.ICategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -11,7 +11,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class CategoryServiceImpl implements CategoryService {
+public class CategoryServiceImpl implements ICategoryService {
 
     private final CategoryRepository categoryRepository;
 
