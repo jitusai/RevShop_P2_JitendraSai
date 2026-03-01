@@ -22,4 +22,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findLowStockProducts();
 
     List<Product> findByNameContainingIgnoreCase(String keyword);
+
+    // Latest 8 products for "New Arrivals" section
+    List<Product> findTop8ByOrderByIdDesc();
+
+    // Latest 8 products added within the last 24 hours
+    List<Product> findTop8ByCreatedAtAfterOrderByIdDesc(java.time.LocalDateTime date);
 }

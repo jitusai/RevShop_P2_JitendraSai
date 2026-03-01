@@ -16,6 +16,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT o FROM Order o WHERE o.status = :status")
     List<Order> findByStatus(OrderStatus status);
 
-    @Query("SELECT o FROM Order o WHERE o.buyer.id = :buyerId")
+    @Query("SELECT o FROM Order o WHERE o.buyer.id = :buyerId ORDER BY o.createdAt DESC")
     List<Order> findByBuyerId(Long buyerId);
+
+    @Query("SELECT COUNT(o) > 0 FROM Order o JOIN o.items i WHERE o.buyer.id = :buyerId AND i.product.id = :productId AND o.status = 'DELIVERED'")
+    boolean hasDeliveredOrderForProduct(Long buyerId, Long productId);
+
+    @Query("SELECT DISTINCT o FROM Order o JOIN o.items i WHERE i.product.seller.id = :sellerId ORDER BY o.createdAt DESC")
+    List<Order> findAllBySellerId(Long sellerId);
 }
