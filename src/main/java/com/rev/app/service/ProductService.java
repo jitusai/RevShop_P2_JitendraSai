@@ -1,5 +1,6 @@
 package com.rev.app.service;
 
+import com.rev.app.dto.ProductDTO;
 import com.rev.app.entity.Product;
 
 import java.util.List;
@@ -11,15 +12,28 @@ public interface ProductService {
 
     Product updateProduct(Product product);
 
+    void updateProduct(Long id, Product product, Long categoryId);
+
     void deleteProduct(Long id);
 
     Optional<Product> findById(Long id);
 
     List<Product> findAll();
 
-    List<Product> searchByName(String keyword);
+    List<ProductDTO> findAllDTOs();
+
+    List<ProductDTO> searchByName(String keyword);
 
     void saveProduct(Product product);
 
-    Object getAllProducts();
+    void saveProduct(Product product, String sellerEmail, Long categoryId);
+
+    List<ProductDTO> getNewArrivals();
+
+    /**
+     * Returns all products that belong to the named category (case-insensitive).
+     */
+    List<ProductDTO> getProductsByCategoryName(String categoryName);
+
+    List<ProductDTO> findBySellerId(Long sellerId);
 }

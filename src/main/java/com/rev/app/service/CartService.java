@@ -1,14 +1,22 @@
 package com.rev.app.service;
 
-import com.rev.app.entity.Cart;
+import com.rev.app.dto.CartDTO;
 
 import java.util.Optional;
 
 public interface CartService {
 
-    Cart createCart(Cart cart);
+    CartDTO createCart(CartDTO cartDTO);
 
-    Optional<Cart> getCartByUserId(Long userId);
+    Optional<CartDTO> getCartByUserId(Long userId);
 
-    Cart saveCart(Cart cart);
+    CartDTO saveCart(CartDTO cartDTO);
+
+    void addItemToCart(Long userId, Long productId, Integer quantity);
+
+    void updateItemQuantity(Long userId, Long cartItemId, Integer quantity);
+
+    void removeItemFromCart(Long userId, Long cartItemId);
+
+    void clearCart(Long userId);
 }

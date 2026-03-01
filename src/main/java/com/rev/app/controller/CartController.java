@@ -1,5 +1,6 @@
 package com.rev.app.controller;
 
+import com.rev.app.dto.CartDTO;
 import com.rev.app.service.CartService;
 import com.rev.app.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -8,8 +9,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/cart")
@@ -25,7 +28,7 @@ public class CartController {
             cartService.getCartByUserId(user.getId()).ifPresent(cart -> {
                 model.addAttribute("cart", cart);
                 BigDecimal total = cart.getItems().stream()
-                        .map(item -> item.getTotalPrice())
+                        .map(item -> BigDecimal.valueOf(item.getTotalPrice()))
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
                 model.addAttribute("cartTotal", total);
             });
@@ -36,29 +39,51 @@ public class CartController {
     @PostMapping("/add")
     public String addToCart(@RequestParam("productId") Long productId,
             @RequestParam("quantity") Integer quantity,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        userService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
-            cartService.addItemToCart(user.getId(), productId, quantity);
-        });
+            @AuthenticationPrincipal UserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
+        try {
+            userService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
+                cartService.addItemToCart(user.getId(), productId, quantity);
+            });
+            redirectAttributes.addFlashAttribute("successMsg", "Added to cart! 🛒");
+        } catch (com.rev.app.exception.InsufficientStockException e) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Stock issue: " + e.getMessage());
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Could not add to cart: " + e.getMessage());
+        }
         return "redirect:/cart";
     }
 
     @PostMapping("/update")
     public String updateQuantity(@RequestParam("cartItemId") Long cartItemId,
             @RequestParam("quantity") Integer quantity,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        userService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
-            cartService.updateItemQuantity(user.getId(), cartItemId, quantity);
-        });
+            @AuthenticationPrincipal UserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
+        try {
+            userService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
+                cartService.updateItemQuantity(user.getId(), cartItemId, quantity);
+            });
+            redirectAttributes.addFlashAttribute("successMsg", "Cart updated! ✨");
+        } catch (com.rev.app.exception.InsufficientStockException e) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Stock issue: " + e.getMessage());
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Could not update cart: " + e.getMessage());
+        }
         return "redirect:/cart";
     }
 
     @PostMapping("/remove")
     public String removeFromCart(@RequestParam("cartItemId") Long cartItemId,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        userService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
-            cartService.removeItemFromCart(user.getId(), cartItemId);
-        });
+            @AuthenticationPrincipal UserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
+        try {
+            userService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
+                cartService.removeItemFromCart(user.getId(), cartItemId);
+            });
+            redirectAttributes.addFlashAttribute("successMsg", "Item removed from cart.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Could not remove item: " + e.getMessage());
+        }
         return "redirect:/cart";
     }
 }

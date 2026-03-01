@@ -1,17 +1,23 @@
 package com.rev.app.service;
 
-import com.rev.app.entity.User;
-
+import com.rev.app.dto.UserDTO;
 import java.util.Optional;
 
 public interface UserService {
 
-    User registerBuyer(User user);
+    UserDTO registerBuyer(UserDTO userDto);
 
-    User registerSeller(User user);
+    UserDTO registerSeller(UserDTO userDto);
 
-    Optional<User> findByEmail(String email);
+    /** Returns true if the buyer has a DELIVERED order containing this product. */
+    boolean hasDeliveredOrderForProduct(Long buyerId, Long productId);
 
-    Optional<User> findById(Long id);
+    /** Updates the user's address. Pass null to clear the address. */
+    void updateAddress(Long userId, String address);
 
+    Optional<UserDTO> findByEmail(String email);
+
+    Optional<UserDTO> findById(Long id);
+
+    UserDTO saveUser(UserDTO userDto);
 }

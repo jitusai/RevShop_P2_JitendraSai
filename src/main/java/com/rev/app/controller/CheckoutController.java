@@ -1,11 +1,8 @@
 package com.rev.app.controller;
 
-import com.rev.app.entity.*;
-import com.rev.app.entity.enums.OrderStatus;
-import com.rev.app.entity.enums.PaymentMethod;
-import com.rev.app.entity.enums.PaymentStatus;
 import com.rev.app.service.CartService;
 import com.rev.app.service.OrderService;
+import com.rev.app.service.ProductService;
 import com.rev.app.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,7 +15,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/checkout")
@@ -28,27 +24,65 @@ public class CheckoutController {
     private final CartService cartService;
     private final OrderService orderService;
     private final UserService userService;
+    private final ProductService productService;
 
     @GetMapping
-    public String showCheckout(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        Optional<User> userOpt = userService.findByEmail(userDetails.getUsername());
+    public String showCheckout(@AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(value = "productId", required = false) Long productId,
+            @RequestParam(value = "quantity", required = false, defaultValue = "1") Integer quantity,
+            Model model) {
+        Optional<com.rev.app.dto.UserDTO> userOpt = userService.findByEmail(userDetails.getUsername());
         if (userOpt.isEmpty())
             return "redirect:/login";
 
-        User user = userOpt.get();
-        Optional<Cart> cartOpt = cartService.getCartByUserId(user.getId());
+        com.rev.app.dto.UserDTO userDTO = userOpt.get();
+        com.rev.app.entity.User user = com.rev.app.mapper.UserMapper.toEntity(userDTO);
 
-        if (cartOpt.isEmpty() || cartOpt.get().getItems().isEmpty()) {
-            model.addAttribute("error", "Your cart is empty!");
-            model.addAttribute("cart", null);
+        if (productId != null) {
+            // ── BUY NOW FLOW ──────────────────────────────────────────────────
+            Optional<com.rev.app.entity.Product> productOpt = productService.findById(productId);
+            if (productOpt.isPresent()) {
+                com.rev.app.entity.Product p = productOpt.get();
+                BigDecimal itemPrice = p.getDiscountedPrice() != null ? p.getDiscountedPrice() : p.getPrice();
+                BigDecimal total = itemPrice.multiply(new BigDecimal(quantity));
+
+                model.addAttribute("isBuyNow", true);
+                model.addAttribute("buyNowProduct", p);
+                model.addAttribute("buyNowQuantity", quantity);
+                model.addAttribute("cartTotal", total);
+
+                // Create a mock cart DTO for the view to avoid null errors and template
+                // mismatches
+                com.rev.app.dto.CartDTO mockCart = new com.rev.app.dto.CartDTO();
+                com.rev.app.dto.CartItemDTO mockItem = new com.rev.app.dto.CartItemDTO();
+                mockItem.setProductId(p.getId());
+                mockItem.setProductName(p.getName());
+                mockItem.setQuantity(quantity);
+                mockItem.setProductStock(p.getQuantity() != null ? p.getQuantity() : 0);
+                mockItem.setTotalPrice(total.doubleValue());
+                mockCart.setItems(List.of(mockItem));
+                model.addAttribute("cart", mockCart);
+
+            } else {
+                return "redirect:/";
+            }
         } else {
-            Cart cart = cartOpt.get();
-            BigDecimal total = cart.getItems().stream()
-                    .map(CartItem::getTotalPrice)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            model.addAttribute("cart", cart);
-            model.addAttribute("cartTotal", total);
+            // ── NORMAL CART FLOW ──────────────────────────────────────────────
+            Optional<com.rev.app.dto.CartDTO> cartOpt = cartService.getCartByUserId(user.getId());
+            if (cartOpt.isEmpty() || cartOpt.get().getItems().isEmpty()) {
+                model.addAttribute("error", "Your cart is empty!");
+                model.addAttribute("cart", null);
+            } else {
+                com.rev.app.dto.CartDTO cart = cartOpt.get();
+                BigDecimal total = cart.getItems().stream()
+                        .map(item -> BigDecimal.valueOf(item.getTotalPrice()))
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                model.addAttribute("cart", cart);
+                model.addAttribute("cartTotal", total);
+            }
+            model.addAttribute("isBuyNow", false);
         }
+
         model.addAttribute("user", user);
         return "checkout";
     }
@@ -57,78 +91,49 @@ public class CheckoutController {
     public String placeOrder(@AuthenticationPrincipal UserDetails userDetails,
             @RequestParam("paymentMethod") String methodStr,
             @RequestParam("address") String deliveryAddress,
+            @RequestParam(value = "productId", required = false) Long productId,
+            @RequestParam(value = "quantity", required = false) Integer quantity,
             RedirectAttributes redirectAttributes) {
 
-        Optional<User> userOpt = userService.findByEmail(userDetails.getUsername());
+        Optional<com.rev.app.dto.UserDTO> userOpt = userService.findByEmail(userDetails.getUsername());
         if (userOpt.isEmpty())
             return "redirect:/login";
 
-        User user = userOpt.get();
+        com.rev.app.dto.UserDTO userDTO = userOpt.get();
+        com.rev.app.entity.User user = com.rev.app.mapper.UserMapper.toEntity(userDTO);
 
-        Optional<Cart> cartOpt = cartService.getCartByUserId(user.getId());
-        if (cartOpt.isEmpty() || cartOpt.get().getItems().isEmpty()) {
-            redirectAttributes.addFlashAttribute("error", "Cart is empty!");
-            return "redirect:/cart";
-        }
-
-        Cart cart = cartOpt.get();
-        BigDecimal total = cart.getItems().stream()
-                .map(CartItem::getTotalPrice)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        // Build order
-        Order order = new Order();
-        order.setBuyer(user);
-        order.setStatus(OrderStatus.PENDING);
-        order.setTotalAmount(total);
-
-        List<OrderItem> orderItems = cart.getItems().stream().map(cartItem -> OrderItem.builder()
-                .order(order)
-                .product(cartItem.getProduct())
-                .quantity(cartItem.getQuantity())
-                .price(cartItem.getProduct().getDiscountedPrice() != null
-                        ? cartItem.getProduct().getDiscountedPrice()
-                        : cartItem.getProduct().getPrice())
-                .build()).collect(Collectors.toList());
-
-        order.setItems(orderItems);
-
-        // Payment
-        PaymentMethod method;
         try {
-            method = PaymentMethod.valueOf(methodStr);
-        } catch (IllegalArgumentException e) {
-            method = PaymentMethod.CASH_ON_DELIVERY; // Safe fallback
+            com.rev.app.dto.OrderDTO savedOrderDTO;
+            if (productId != null) {
+                // "Buy Now" flow
+                savedOrderDTO = orderService.placeOrder(userDTO, productId, quantity, methodStr, deliveryAddress);
+            } else {
+                // Normal cart flow
+                Optional<com.rev.app.dto.CartDTO> cartOpt = cartService.getCartByUserId(user.getId());
+                if (cartOpt.isEmpty() || cartOpt.get().getItems().isEmpty()) {
+                    redirectAttributes.addFlashAttribute("errorMsg", "Cart is empty!");
+                    return "redirect:/cart";
+                }
+
+                com.rev.app.dto.CartDTO cartDTO = cartOpt.get();
+                savedOrderDTO = orderService.placeOrder(userDTO, cartDTO.getItems(), methodStr, deliveryAddress);
+                cartService.clearCart(user.getId());
+            }
+
+            redirectAttributes.addFlashAttribute("paymentMethod", savedOrderDTO.getPaymentMethod());
+            redirectAttributes.addFlashAttribute("paymentStatus", savedOrderDTO.getPaymentStatus());
+            redirectAttributes.addFlashAttribute("successMsg", "Order placed successfully! 🎊");
+
+            return "redirect:/buyer/order-confirmation";
+        } catch (com.rev.app.exception.InsufficientStockException e) {
+            redirectAttributes.addFlashAttribute("errorMsg", "Order failed: " + e.getMessage());
+            return "redirect:/checkout"
+                    + (productId != null ? "?productId=" + productId + "&quantity=" + quantity : "");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMsg",
+                    "An unexpected error occurred during checkout: " + e.getMessage());
+            return "redirect:/checkout"
+                    + (productId != null ? "?productId=" + productId + "&quantity=" + quantity : "");
         }
-
-        PaymentStatus paymentStatus = (method == PaymentMethod.CASH_ON_DELIVERY)
-                ? PaymentStatus.INITIATED
-                : PaymentStatus.SUCCESS;
-
-        Payment payment = Payment.builder()
-                .order(order)
-                .method(method)
-                .status(paymentStatus)
-                .amount(total)
-                .build();
-        order.setPayment(payment);
-
-        // Save address if updated
-        if (deliveryAddress != null && !deliveryAddress.isBlank()) {
-            user.setAddress(deliveryAddress);
-            userService.saveUser(user);
-        }
-
-        // Place order
-        orderService.placeOrder(order);
-
-        // ── Clear cart using dedicated service method ──────────────────────
-        cartService.clearCart(user.getId());
-
-        // Pass payment info to confirmation page
-        redirectAttributes.addFlashAttribute("paymentMethod", method.name());
-        redirectAttributes.addFlashAttribute("paymentStatus", paymentStatus.name());
-
-        return "redirect:/buyer/order-confirmation";
     }
 }

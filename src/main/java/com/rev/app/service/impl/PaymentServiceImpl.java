@@ -1,6 +1,7 @@
 package com.rev.app.service.impl;
 
 import com.rev.app.entity.Payment;
+import com.rev.app.entity.enums.PaymentStatus;
 import com.rev.app.repository.PaymentRepository;
 import com.rev.app.service.PaymentService;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,10 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public Payment processPayment(Payment payment) {
+        // Simulate payment processing: always set to SUCCESS for demo purposes
+        if (payment.getStatus() == null || payment.getStatus() == PaymentStatus.INITIATED) {
+            payment.setStatus(PaymentStatus.SUCCESS);
+        }
         return paymentRepository.save(payment);
     }
 

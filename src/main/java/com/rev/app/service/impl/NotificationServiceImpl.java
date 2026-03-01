@@ -23,4 +23,12 @@ public class NotificationServiceImpl implements NotificationService {
     public List<Notification> getUserNotifications(Long userId) {
         return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
+
+    @Override
+    public void markAsRead(Long notificationId) {
+        notificationRepository.findById(notificationId).ifPresent(n -> {
+            n.setReadStatus(true);
+            notificationRepository.save(n);
+        });
+    }
 }
