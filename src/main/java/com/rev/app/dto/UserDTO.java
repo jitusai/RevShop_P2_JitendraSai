@@ -17,6 +17,7 @@ public class UserDTO {
     private String gstNumber;
     private String sellerDistributorName;
     private String role; // ROLE_BUYER or ROLE_SELLER
+    private java.util.List<String> additionalAddresses;
 
     public Long getId() {
         return id;
@@ -88,5 +89,13 @@ public class UserDTO {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public java.util.List<String> getAdditionalAddresses() {
+        return additionalAddresses;
+    }
+
+    public void setAdditionalAddresses(java.util.List<String> additionalAddresses) {
+        this.additionalAddresses = additionalAddresses;
     }
 }

@@ -13,27 +13,33 @@ public class CartDTO {
     private Long userId;
     private List<CartItemDTO> items;
 
-    public Long getId() {
+    public Long getId()
+    {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Long id)
+    {
         this.id = id;
     }
 
-    public Long getUserId() {
+    public Long getUserId()
+    {
         return userId;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(Long userId)
+    {
         this.userId = userId;
     }
 
-    public List<CartItemDTO> getItems() {
+    public List<CartItemDTO> getItems()
+    {
         return items;
     }
 
-    public void setItems(List<CartItemDTO> items) {
+    public void setItems(List<CartItemDTO> items)
+    {
         this.items = items;
     }
 }
