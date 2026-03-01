@@ -26,10 +26,52 @@ public class Payment extends BaseEntity {
     private Order order;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method")
     private PaymentMethod method;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status")
     private PaymentStatus status;
 
     private BigDecimal amount;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Order getOrder() {
+        return order;
+    }
+
+    public void setOrder(Order order) {
+        this.order = order;
+    }
+
+    public PaymentMethod getMethod() {
+        return method;
+    }
+
+    public void setMethod(PaymentMethod method) {
+        this.method = method;
+    }
+
+    public PaymentStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(PaymentStatus status) {
+        this.status = status;
+    }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
 }

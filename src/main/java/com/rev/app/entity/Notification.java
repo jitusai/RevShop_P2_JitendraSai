@@ -25,11 +25,52 @@ public class Notification {
 
     private String message;
 
+    @Builder.Default
     private boolean readStatus = false;
-    private LocalDateTime createdAt;  // ✅ required for ORDER BY
+    private LocalDateTime createdAt; // ✅ required for ORDER BY
 
     @PrePersist
     public void onCreate() {
         this.createdAt = LocalDateTime.now();
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public boolean isReadStatus() {
+        return readStatus;
+    }
+
+    public void setReadStatus(boolean readStatus) {
+        this.readStatus = readStatus;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

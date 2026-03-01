@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-
 import java.time.LocalDateTime;
 
 @Getter
@@ -16,15 +15,29 @@ public abstract class BaseEntity {
     private LocalDateTime updatedAt;
 
     @PrePersist
-    public void onCreate()
-    {
+    public void onCreate() {
         this.createdAt = LocalDateTime.now();
 
     }
 
     @PreUpdate
-    public void onUpdate()
-    {
-        this.updatedAt= LocalDateTime.now();
+    public void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }
