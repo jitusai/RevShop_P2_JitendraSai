@@ -16,6 +16,11 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         ensureCategory("Electronics");
         ensureCategory("Fashion");
+        ensureCategory("Home & Kitchen");
+        ensureCategory("Beauty & Personal Care");
+        ensureCategory("Sports & Fitness");
+        ensureCategory("Books");
+        ensureCategory("Toys & Games");
     }
 
     private void ensureCategory(String name) {
