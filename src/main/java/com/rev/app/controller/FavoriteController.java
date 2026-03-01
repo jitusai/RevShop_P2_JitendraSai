@@ -1,7 +1,7 @@
 package com.rev.app.controller;
 
-import com.rev.app.service.FavoriteService;
-import com.rev.app.service.UserService;
+import com.rev.app.service.IFavoriteService;
+import com.rev.app.service.IUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,13 +15,13 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequiredArgsConstructor
 public class FavoriteController {
 
-    private final FavoriteService favoriteService;
-    private final UserService userService;
+    private final IFavoriteService IFavoriteService;
+    private final IUserService IUserService;
 
     @GetMapping
     public String viewFavorites(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        userService.findByEmail(userDetails.getUsername())
-                .ifPresent(user -> model.addAttribute("favorites", favoriteService.getFavoritesByUserId(user.getId())));
+        IUserService.findByEmail(userDetails.getUsername())
+                .ifPresent(user -> model.addAttribute("favorites", IFavoriteService.getFavoritesByUserId(user.getId())));
         return "favorites";
     }
 
@@ -29,11 +29,11 @@ public class FavoriteController {
     public String addToFavorites(@RequestParam("productId") Long productId,
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes redirectAttributes) {
-        userService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
-            boolean alreadyFav = favoriteService.getFavoritesByUserId(user.getId()).stream()
+        IUserService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
+            boolean alreadyFav = IFavoriteService.getFavoritesByUserId(user.getId()).stream()
                     .anyMatch(f -> f.getProduct().getId().equals(productId));
             if (!alreadyFav) {
-                favoriteService.toggleFavorite(user.getId(), productId);
+                IFavoriteService.toggleFavorite(user.getId(), productId);
                 redirectAttributes.addFlashAttribute("favMsg", "Added to Favourites ❤️");
             } else {
                 redirectAttributes.addFlashAttribute("favMsg", "Already in your Favourites!");
@@ -46,10 +46,10 @@ public class FavoriteController {
     public String toggleFavorite(@RequestParam("productId") Long productId,
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes redirectAttributes) {
-        userService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
-            boolean wasFav = favoriteService.getFavoritesByUserId(user.getId()).stream()
+        IUserService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
+            boolean wasFav = IFavoriteService.getFavoritesByUserId(user.getId()).stream()
                     .anyMatch(f -> f.getProduct().getId().equals(productId));
-            favoriteService.toggleFavorite(user.getId(), productId);
+            IFavoriteService.toggleFavorite(user.getId(), productId);
             if (wasFav) {
                 redirectAttributes.addFlashAttribute("favMsg", "Removed from Favourites 🤍");
             } else {
@@ -62,7 +62,7 @@ public class FavoriteController {
     @PostMapping("/remove")
     public String removeFromFavorites(@RequestParam("favoriteId") Long favoriteId,
             RedirectAttributes redirectAttributes) {
-        favoriteService.removeFavorite(favoriteId);
+        IFavoriteService.removeFavorite(favoriteId);
         redirectAttributes.addFlashAttribute("favMsg", "Removed from Favourites 🤍");
         return "redirect:/favorites";
     }

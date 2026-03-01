@@ -1,7 +1,7 @@
 package com.rev.app.controller;
 
 import com.rev.app.dto.UserDTO;
-import com.rev.app.service.UserService;
+import com.rev.app.service.IUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,12 +11,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserService userService;
+    private final IUserService IUserService;
 
     @GetMapping("/register")
     public String showRegistrationForm(Model model) {
@@ -25,12 +26,27 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public String registerUser(@ModelAttribute UserDTO user) {
-        if ("ROLE_SELLER".equals(user.getRole())) {
-            userService.registerSeller(user);
-        } else {
-            userService.registerBuyer(user);
+    public String registerUser(@ModelAttribute UserDTO user, RedirectAttributes redirectAttributes, Model model) {
+        // Email check
+        if (IUserService.findByEmail(user.getEmail()).isPresent()) {
+            model.addAttribute("errorMsg", "u already have the account please login");
+            model.addAttribute("user", user);
+            return "register";
         }
+
+        // Name check
+        if (IUserService.existsByName(user.getName())) {
+            model.addAttribute("errorMsg", "choose another name");
+            model.addAttribute("user", user);
+            return "register";
+        }
+
+        if ("ROLE_SELLER".equals(user.getRole())) {
+            IUserService.registerSeller(user);
+        } else {
+            IUserService.registerBuyer(user);
+        }
+        redirectAttributes.addFlashAttribute("successMsg", "User created successfully! Please login. ✨");
         return "redirect:/login";
     }
 
@@ -46,7 +62,7 @@ public class UserController {
             @AuthenticationPrincipal UserDetails userDetails,
             Model model) {
         if (userDetails != null) {
-            userService.findByEmail(userDetails.getUsername()).ifPresent(user -> model.addAttribute("user", user));
+            IUserService.findByEmail(userDetails.getUsername()).ifPresent(user -> model.addAttribute("user", user));
         }
         return "profile";
     }
@@ -56,8 +72,8 @@ public class UserController {
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam("address") String address) {
         if (userDetails != null) {
-            userService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
-                userService.updateAddress(user.getId(), address);
+            IUserService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
+                IUserService.updateAddress(user.getId(), address);
             });
         }
         return "redirect:/profile?success_edit";
@@ -67,8 +83,8 @@ public class UserController {
     public String deleteAddress(
             @AuthenticationPrincipal UserDetails userDetails) {
         if (userDetails != null) {
-            userService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
-                userService.updateAddress(user.getId(), null);
+            IUserService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
+                IUserService.updateAddress(user.getId(), null);
             });
         }
         return "redirect:/profile?success_delete";

@@ -1,8 +1,8 @@
 package com.rev.app.controller;
 
-import com.rev.app.service.NotificationService;
-import com.rev.app.service.ProductService;
-import com.rev.app.service.UserService;
+import com.rev.app.service.INotificationService;
+import com.rev.app.service.IProductService;
+import com.rev.app.service.IUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,22 +17,22 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequiredArgsConstructor
 public class HomeController {
 
-    private final ProductService productService;
-    private final UserService userService;
-    private final NotificationService notificationService;
+    private final IProductService IProductService;
+    private final IUserService IUserService;
+    private final INotificationService INotificationService;
 
     // ── HOME PAGE ─────────────────────────────────────────────────────────────
 
     @GetMapping("/")
     public String home(Model model) {
-        model.addAttribute("newArrivals", productService.getNewArrivals());
-        model.addAttribute("electronics", productService.getProductsByCategoryName("Electronics"));
-        model.addAttribute("fashion", productService.getProductsByCategoryName("Fashion"));
-        model.addAttribute("homeKitchen", productService.getProductsByCategoryName("Home & Kitchen"));
-        model.addAttribute("beauty", productService.getProductsByCategoryName("Beauty & Personal Care"));
-        model.addAttribute("sports", productService.getProductsByCategoryName("Sports & Fitness"));
-        model.addAttribute("books", productService.getProductsByCategoryName("Books"));
-        model.addAttribute("toys", productService.getProductsByCategoryName("Toys & Games"));
+        model.addAttribute("newArrivals", IProductService.getNewArrivals());
+        model.addAttribute("electronics", IProductService.getProductsByCategoryName("Electronics"));
+        model.addAttribute("fashion", IProductService.getProductsByCategoryName("Fashion"));
+        model.addAttribute("homeKitchen", IProductService.getProductsByCategoryName("Home & Kitchen"));
+        model.addAttribute("beauty", IProductService.getProductsByCategoryName("Beauty & Personal Care"));
+        model.addAttribute("sports", IProductService.getProductsByCategoryName("Sports & Fitness"));
+        model.addAttribute("books", IProductService.getProductsByCategoryName("Books"));
+        model.addAttribute("toys", IProductService.getProductsByCategoryName("Toys & Games"));
         return "home";
     }
 
@@ -41,7 +41,7 @@ public class HomeController {
     @GetMapping("/category/{name}")
     public String browseCategory(@PathVariable String name, Model model) {
         model.addAttribute("categoryName", name);
-        model.addAttribute("products", productService.getProductsByCategoryName(name));
+        model.addAttribute("products", IProductService.getProductsByCategoryName(name));
         return "category";
     }
 
@@ -56,8 +56,8 @@ public class HomeController {
 
     @GetMapping("/notifications")
     public String viewNotifications(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        userService.findByEmail(userDetails.getUsername()).ifPresent(user -> model.addAttribute("notifications",
-                notificationService.getUserNotifications(user.getId())));
+        IUserService.findByEmail(userDetails.getUsername()).ifPresent(user -> model.addAttribute("notifications",
+                INotificationService.getUserNotifications(user.getId())));
         return "notifications";
     }
 
@@ -65,7 +65,7 @@ public class HomeController {
             "/buyer/notifications/{id}/acknowledge" })
     public String acknowledgeNotification(@PathVariable(required = false) Long id) {
         if (id != null) {
-            notificationService.markAsRead(id);
+            INotificationService.markAsRead(id);
         }
         return "redirect:/notifications";
     }
@@ -75,7 +75,7 @@ public class HomeController {
     @GetMapping("/search")
     public String search(@RequestParam("keyword") String keyword, Model model) {
         model.addAttribute("keyword", keyword);
-        model.addAttribute("products", productService.searchByName(keyword));
+        model.addAttribute("products", IProductService.searchByName(keyword));
         return "category"; // Reusing category.html for results listing
     }
 

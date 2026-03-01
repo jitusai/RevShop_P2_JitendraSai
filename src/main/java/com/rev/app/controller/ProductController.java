@@ -1,12 +1,8 @@
 package com.rev.app.controller;
 
 import com.rev.app.entity.Product;
-import com.rev.app.service.CategoryService;
-import com.rev.app.service.FavoriteService;
-import com.rev.app.service.OrderService;
-import com.rev.app.service.ProductService;
-import com.rev.app.service.ReviewService;
-import com.rev.app.service.UserService;
+import com.rev.app.service.*;
+import com.rev.app.service.IProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,12 +27,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ProductController {
 
-    private final ProductService productService;
-    private final UserService userService;
-    private final CategoryService categoryService;
-    private final ReviewService reviewService;
-    private final FavoriteService favoriteService;
-    private final OrderService orderService;
+    private final IProductService IProductService;
+    private final IUserService IUserService;
+    private final ICategoryService ICategoryService;
+    private final IReviewService IReviewService;
+    private final IFavoriteService IFavoriteService;
+    private final IOrderService IOrderService;
 
     @Value("${file.upload-dir:uploads/products}")
     private String uploadDir;
@@ -65,7 +61,7 @@ public class ProductController {
     // ── Display All Products ────────────────────────────────────────────────
     @GetMapping
     public String viewProducts(Model model) {
-        model.addAttribute("products", productService.findAllDTOs());
+        model.addAttribute("products", IProductService.findAllDTOs());
         model.addAttribute("isSellerView", false);
         return "products";
     }
@@ -73,8 +69,8 @@ public class ProductController {
     // ── Display Seller's Products ───────────────────────────────────────────
     @GetMapping("/seller")
     public String viewSellerProducts(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        userService.findByEmail(userDetails.getUsername()).ifPresentOrElse(user -> {
-            model.addAttribute("products", productService.findBySellerId(user.getId()));
+        IUserService.findByEmail(userDetails.getUsername()).ifPresentOrElse(user -> {
+            model.addAttribute("products", IProductService.findBySellerId(user.getId()));
             model.addAttribute("isSellerView", true);
         }, () -> {
             model.addAttribute("isSellerView", false);
@@ -86,7 +82,7 @@ public class ProductController {
     @GetMapping("/add")
     public String showAddForm(Model model) {
         model.addAttribute("product", new com.rev.app.dto.ProductDTO());
-        model.addAttribute("categories", categoryService.findAll());
+        model.addAttribute("categories", ICategoryService.findAll());
         return "product-form";
     }
 
@@ -116,7 +112,7 @@ public class ProductController {
                 product.setImageUrl(saveImage(imageFile));
             }
 
-            productService.saveProduct(product, userDetails.getUsername(), categoryId);
+            IProductService.saveProduct(product, userDetails.getUsername(), categoryId);
             redirectAttributes.addFlashAttribute("successMsg", "Product added successfully! 🎉");
             return "redirect:/products/seller";
         } catch (Exception e) {
@@ -127,11 +123,18 @@ public class ProductController {
 
     // ── Show Edit Form ──────────────────────────────────────────────────────
     @GetMapping("/edit/{id}")
-    public String showEditForm(@PathVariable Long id, Model model) {
-        productService.findById(id)
-                .ifPresent(product -> model.addAttribute("product", com.rev.app.mapper.ProductMapper.toDTO(product)));
-        model.addAttribute("categories", categoryService.findAll());
-        return "product-form";
+    public String showEditForm(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails, Model model,
+            RedirectAttributes redirectAttributes) {
+        return IProductService.findById(id).map(product -> {
+            if (!product.getSeller().getEmail().equals(userDetails.getUsername())) {
+                redirectAttributes.addFlashAttribute("errorMsg",
+                        "You can't edit the product as you are not the owner for this. ⚠️");
+                return "redirect:/products/seller";
+            }
+            model.addAttribute("product", com.rev.app.mapper.ProductMapper.toDTO(product));
+            model.addAttribute("categories", ICategoryService.findAll());
+            return "product-form";
+        }).orElse("redirect:/products/seller");
     }
 
     // ── Update EXISTING Product ─────────────────────────────────────────────
@@ -146,9 +149,15 @@ public class ProductController {
             @RequestParam("quantity") Integer quantity,
             @RequestParam(value = "stockThreshold", required = false) Integer stockThreshold,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal UserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
 
-        productService.findById(id).ifPresent(existing -> {
+        IProductService.findById(id).ifPresent(existing -> {
+            if (!existing.getSeller().getEmail().equals(userDetails.getUsername())) {
+                redirectAttributes.addFlashAttribute("errorMsg",
+                        "You can't update the product as you are not the owner for this. ⚠️");
+                return;
+            }
             existing.setName(name);
             existing.setDescription(description);
             existing.setPrice(price);
@@ -157,7 +166,7 @@ public class ProductController {
             existing.setStockThreshold(stockThreshold);
 
             if (categoryId != null) {
-                categoryService.findById(categoryId).ifPresent(existing::setCategory);
+                ICategoryService.findById(categoryId).ifPresent(existing::setCategory);
             } else {
                 existing.setCategory(null);
             }
@@ -167,19 +176,31 @@ public class ProductController {
             if (newImageUrl != null) {
                 existing.setImageUrl(newImageUrl);
             }
-            productService.saveProduct(existing);
+            IProductService.saveProduct(existing);
+            redirectAttributes.addFlashAttribute("successMsg", "Product updated successfully! ✨");
         });
 
-        return "redirect:/products";
+        return "redirect:/products/seller";
     }
 
     // ── Delete Product ──────────────────────────────────────────────────────
     @GetMapping("/delete/{id}")
     public String deleteProduct(@PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails,
             org.springframework.web.servlet.mvc.support.RedirectAttributes redirectAttributes) {
         try {
-            productService.deleteProduct(id);
-            redirectAttributes.addFlashAttribute("successMsg", "Product deleted successfully.");
+            java.util.Optional<com.rev.app.entity.Product> productOpt = IProductService.findById(id);
+            if (productOpt.isPresent()) {
+                if (!productOpt.get().getSeller().getEmail().equals(userDetails.getUsername())) {
+                    redirectAttributes.addFlashAttribute("errorMsg",
+                            "You can't delete the product as you are not the owner for this. ⚠️");
+                    return "redirect:/products/seller";
+                }
+                IProductService.deleteProduct(id);
+                redirectAttributes.addFlashAttribute("successMsg", "Product deleted successfully.");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMsg", "Product not found.");
+            }
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
             redirectAttributes.addFlashAttribute("errorMsg",
                     "This product cannot be deleted because it is part of an existing order or is referenced elsewhere.");
@@ -187,7 +208,7 @@ public class ProductController {
             redirectAttributes.addFlashAttribute("errorMsg",
                     "An unexpected error occurred while deleting the product.");
         }
-        return "redirect:/products";
+        return "redirect:/products/seller";
     }
 
     // ── View Product Detail ─────────────────────────────────────────────────
@@ -195,23 +216,23 @@ public class ProductController {
     public String viewProduct(@PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails,
             Model model) {
-        productService.findById(id).ifPresent(product -> {
+        IProductService.findById(id).ifPresent(product -> {
             com.rev.app.dto.ProductDTO dto = com.rev.app.mapper.ProductMapper.toDTO(product);
             model.addAttribute("product", dto);
             model.addAttribute("reviews", dto.getReviews());
         });
         if (userDetails != null) {
-            userService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
+            IUserService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
                 model.addAttribute("currentUserId", user.getId());
                 // Check if product is already in user's favorites
-                boolean isFav = favoriteService.getFavoritesByUserId(user.getId()).stream()
+                boolean isFav = IFavoriteService.getFavoritesByUserId(user.getId()).stream()
                         .anyMatch(f -> f.getProduct().getId().equals(id));
                 model.addAttribute("isFav", isFav);
                 // canReview = buyer has received this product (DELIVERED order)
-                boolean canReview = orderService.hasDeliveredOrderForProduct(user.getId(), id);
+                boolean canReview = IOrderService.hasDeliveredOrderForProduct(user.getId(), id);
                 model.addAttribute("canReview", canReview);
                 // Pass user's existing review if any
-                reviewService.findByProductIdAndUserId(id, user.getId())
+                IReviewService.findByProductIdAndUserId(id, user.getId())
                         .ifPresent(r -> model.addAttribute("myReview", r));
             });
         }
@@ -229,9 +250,9 @@ public class ProductController {
         if (userDetails != null) {
             try {
                 String imageUrl = (reviewImage != null && !reviewImage.isEmpty()) ? saveImage(reviewImage) : null;
-                userService.findByEmail(userDetails.getUsername())
+                IUserService.findByEmail(userDetails.getUsername())
                         .ifPresent(
-                                user -> reviewService.saveOrUpdateReview(id, user.getId(), rating, comment, imageUrl));
+                                user -> IReviewService.saveOrUpdateReview(id, user.getId(), rating, comment, imageUrl));
                 redirectAttributes.addFlashAttribute("successMsg", "Review submitted! Thank you. ❤️");
             } catch (Exception e) {
                 redirectAttributes.addFlashAttribute("errorMsg", "Could not save review: " + e.getMessage());

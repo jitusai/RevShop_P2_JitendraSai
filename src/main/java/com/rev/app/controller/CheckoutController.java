@@ -1,9 +1,9 @@
 package com.rev.app.controller;
 
-import com.rev.app.service.CartService;
-import com.rev.app.service.OrderService;
-import com.rev.app.service.ProductService;
-import com.rev.app.service.UserService;
+import com.rev.app.service.ICartService;
+import com.rev.app.service.IOrderService;
+import com.rev.app.service.IProductService;
+import com.rev.app.service.IUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -21,17 +21,17 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class CheckoutController {
 
-    private final CartService cartService;
-    private final OrderService orderService;
-    private final UserService userService;
-    private final ProductService productService;
+    private final ICartService ICartService;
+    private final IOrderService IOrderService;
+    private final IUserService IUserService;
+    private final IProductService IProductService;
 
     @GetMapping
     public String showCheckout(@AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(value = "productId", required = false) Long productId,
             @RequestParam(value = "quantity", required = false, defaultValue = "1") Integer quantity,
             Model model) {
-        Optional<com.rev.app.dto.UserDTO> userOpt = userService.findByEmail(userDetails.getUsername());
+        Optional<com.rev.app.dto.UserDTO> userOpt = IUserService.findByEmail(userDetails.getUsername());
         if (userOpt.isEmpty())
             return "redirect:/login";
 
@@ -40,7 +40,7 @@ public class CheckoutController {
 
         if (productId != null) {
             // ── BUY NOW FLOW ──────────────────────────────────────────────────
-            Optional<com.rev.app.entity.Product> productOpt = productService.findById(productId);
+            Optional<com.rev.app.entity.Product> productOpt = IProductService.findById(productId);
             if (productOpt.isPresent()) {
                 com.rev.app.entity.Product p = productOpt.get();
                 BigDecimal itemPrice = p.getDiscountedPrice() != null ? p.getDiscountedPrice() : p.getPrice();
@@ -68,7 +68,7 @@ public class CheckoutController {
             }
         } else {
             // ── NORMAL CART FLOW ──────────────────────────────────────────────
-            Optional<com.rev.app.dto.CartDTO> cartOpt = cartService.getCartByUserId(user.getId());
+            Optional<com.rev.app.dto.CartDTO> cartOpt = ICartService.getCartByUserId(user.getId());
             if (cartOpt.isEmpty() || cartOpt.get().getItems().isEmpty()) {
                 model.addAttribute("error", "Your cart is empty!");
                 model.addAttribute("cart", null);
@@ -95,7 +95,7 @@ public class CheckoutController {
             @RequestParam(value = "quantity", required = false) Integer quantity,
             RedirectAttributes redirectAttributes) {
 
-        Optional<com.rev.app.dto.UserDTO> userOpt = userService.findByEmail(userDetails.getUsername());
+        Optional<com.rev.app.dto.UserDTO> userOpt = IUserService.findByEmail(userDetails.getUsername());
         if (userOpt.isEmpty())
             return "redirect:/login";
 
@@ -106,18 +106,18 @@ public class CheckoutController {
             com.rev.app.dto.OrderDTO savedOrderDTO;
             if (productId != null) {
                 // "Buy Now" flow
-                savedOrderDTO = orderService.placeOrder(userDTO, productId, quantity, methodStr, deliveryAddress);
+                savedOrderDTO = IOrderService.placeOrder(userDTO, productId, quantity, methodStr, deliveryAddress);
             } else {
                 // Normal cart flow
-                Optional<com.rev.app.dto.CartDTO> cartOpt = cartService.getCartByUserId(user.getId());
+                Optional<com.rev.app.dto.CartDTO> cartOpt = ICartService.getCartByUserId(user.getId());
                 if (cartOpt.isEmpty() || cartOpt.get().getItems().isEmpty()) {
                     redirectAttributes.addFlashAttribute("errorMsg", "Cart is empty!");
                     return "redirect:/cart";
                 }
 
                 com.rev.app.dto.CartDTO cartDTO = cartOpt.get();
-                savedOrderDTO = orderService.placeOrder(userDTO, cartDTO.getItems(), methodStr, deliveryAddress);
-                cartService.clearCart(user.getId());
+                savedOrderDTO = IOrderService.placeOrder(userDTO, cartDTO.getItems(), methodStr, deliveryAddress);
+                ICartService.clearCart(user.getId());
             }
 
             redirectAttributes.addFlashAttribute("paymentMethod", savedOrderDTO.getPaymentMethod());

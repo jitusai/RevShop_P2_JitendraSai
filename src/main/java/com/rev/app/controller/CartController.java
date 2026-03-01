@@ -1,8 +1,7 @@
 package com.rev.app.controller;
 
-import com.rev.app.dto.CartDTO;
-import com.rev.app.service.CartService;
-import com.rev.app.service.UserService;
+import com.rev.app.service.ICartService;
+import com.rev.app.service.IUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -12,20 +11,19 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
-import java.util.Optional;
 
 @Controller
 @RequestMapping("/cart")
 @RequiredArgsConstructor
 public class CartController {
 
-    private final CartService cartService;
-    private final UserService userService;
+    private final ICartService ICartService;
+    private final IUserService IUserService;
 
     @GetMapping
     public String viewCart(@AuthenticationPrincipal UserDetails userDetails, Model model) {
-        userService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
-            cartService.getCartByUserId(user.getId()).ifPresent(cart -> {
+        IUserService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
+            ICartService.getCartByUserId(user.getId()).ifPresent(cart -> {
                 model.addAttribute("cart", cart);
                 BigDecimal total = cart.getItems().stream()
                         .map(item -> BigDecimal.valueOf(item.getTotalPrice()))
@@ -42,8 +40,8 @@ public class CartController {
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes redirectAttributes) {
         try {
-            userService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
-                cartService.addItemToCart(user.getId(), productId, quantity);
+            IUserService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
+                ICartService.addItemToCart(user.getId(), productId, quantity);
             });
             redirectAttributes.addFlashAttribute("successMsg", "Added to cart! 🛒");
         } catch (com.rev.app.exception.InsufficientStockException e) {
@@ -60,8 +58,8 @@ public class CartController {
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes redirectAttributes) {
         try {
-            userService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
-                cartService.updateItemQuantity(user.getId(), cartItemId, quantity);
+            IUserService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
+                ICartService.updateItemQuantity(user.getId(), cartItemId, quantity);
             });
             redirectAttributes.addFlashAttribute("successMsg", "Cart updated! ✨");
         } catch (com.rev.app.exception.InsufficientStockException e) {
@@ -77,8 +75,8 @@ public class CartController {
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes redirectAttributes) {
         try {
-            userService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
-                cartService.removeItemFromCart(user.getId(), cartItemId);
+            IUserService.findByEmail(userDetails.getUsername()).ifPresent(user -> {
+                ICartService.removeItemFromCart(user.getId(), cartItemId);
             });
             redirectAttributes.addFlashAttribute("successMsg", "Item removed from cart.");
         } catch (Exception e) {
