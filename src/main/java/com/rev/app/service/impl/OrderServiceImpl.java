@@ -16,6 +16,7 @@ import com.rev.app.repository.OrderRepository;
 import com.rev.app.repository.ProductRepository;
 import com.rev.app.service.INotificationService;
 import com.rev.app.service.IOrderService;
+import com.rev.app.service.IProductService;
 import com.rev.app.service.IUserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ public class OrderServiceImpl implements IOrderService {
     private final ProductRepository productRepository;
     private final INotificationService INotificationService;
     private final IUserService IUserService;
+    private final IProductService IProductService;
 
     @Override
     @Transactional
@@ -91,7 +93,7 @@ public class OrderServiceImpl implements IOrderService {
 
             // Atomically decrement stock
             p.setQuantity(p.getQuantity() - cartItem.getQuantity());
-            productRepository.save(p);
+            IProductService.saveProduct(p);
         }
         order.setTotalAmount(total);
         order.setItems(orderItems);
@@ -226,7 +228,7 @@ public class OrderServiceImpl implements IOrderService {
                         int updated = (product.getQuantity() != null ? product.getQuantity() : 0)
                                 + item.getQuantity();
                         product.setQuantity(updated);
-                        productRepository.save(product);
+                        IProductService.saveProduct(product);
                     }
                 }
             }

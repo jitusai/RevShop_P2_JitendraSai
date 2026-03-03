@@ -32,14 +32,21 @@ public class ProductServiceImpl implements IProductService {
     }
 
     public void checkLowStock(com.rev.app.entity.Product product) {
-        if (product.getSeller() != null && product.getQuantity() != null && product.getStockThreshold() != null) {
-            if (product.getQuantity() <= product.getStockThreshold()) {
-                com.rev.app.entity.Notification notification = new com.rev.app.entity.Notification();
-                notification.setUser(product.getSeller());
-                notification.setMessage(
-                        "⚠️ Low Stock Alert: " + product.getName() + " has only " + product.getQuantity() + " left.");
-                notification.setReadStatus(false);
-                INotificationService.sendNotification(notification);
+        if (product != null && product.getQuantity() != null) {
+            // Use 5 as default threshold if not set
+            int threshold = (product.getStockThreshold() != null) ? product.getStockThreshold() : 5;
+
+            if (product.getQuantity() <= threshold) {
+                com.rev.app.entity.User seller = product.getSeller();
+                if (seller != null) {
+                    com.rev.app.entity.Notification notification = new com.rev.app.entity.Notification();
+                    notification.setUser(seller);
+                    notification.setMessage(
+                            "⚠️ Low Stock Alert: " + product.getName() + " has only " + product.getQuantity()
+                                    + " left.");
+                    notification.setReadStatus(false);
+                    INotificationService.sendNotification(notification);
+                }
             }
         }
     }
