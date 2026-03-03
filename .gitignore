@@ -31,3 +31,19 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Logs
+*.log
+*.txt
+logs/
+
+# Local Uploads
+uploads/
+
+# Local Scripts
+run-*.bat
+direct-maven.bat
+
+# OS files
+.DS_Store
+Thumbs.db
