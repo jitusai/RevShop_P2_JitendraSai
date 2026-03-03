@@ -1,68 +1,127 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <head>
+    <meta charset="UTF-8">
     <title>My Orders - RevShop</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 2rem;
-            background-color: #f4f4f9;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: auto;
-            background: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-        }
-
-        th,
-        td {
-            padding: 0.75rem;
-            border: 1px solid #ccc;
-            text-align: left;
-        }
-
-        th {
-            background-color: #007bff;
-            color: white;
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/global.css}">
 </head>
 
-<body>
+<body data-theme="light">
+
+    <!-- ── NAVIGATION ── -->
+    <nav>
+        <div class="nav-top">
+            <a href="/" class="logo"><span class="icon icon-cart"></span> RevShop</a>
+            <div class="search-container">
+                <form action="/search" method="get">
+                    <input type="text" name="keyword" placeholder="Search for products, brands and more"
+                        th:value="${keyword}">
+                    <button type="submit"><span class="icon icon-search"></span></button>
+                </form>
+            </div>
+            <div class="user-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle Dark Mode">&#9790;</button>
+                <a href="/cart" sec:authorize="hasRole('BUYER')" title="Cart"><span class="icon icon-cart"></span>
+                    Cart</a>
+                <a href="/favorites" sec:authorize="hasRole('BUYER')" title="Wishlist"><span
+                        class="icon icon-heart"></span> Wishlist</a>
+                <a href="/orders" sec:authorize="hasRole('BUYER')" title="My Orders"><span
+                        class="icon icon-package"></span> My Orders</a>
+                <a href="/notifications" sec:authorize="isAuthenticated()" title="Notifications"><span
+                        class="icon icon-bell"></span></a>
+                <a href="/profile" sec:authorize="isAuthenticated()" title="Profile">
+                    <span class="icon icon-user"></span> <span th:text="${#authentication.name}">User</span>
+                </a>
+                <a href="/login" class="btn-login" sec:authorize="!isAuthenticated()">Login</a>
+                <a href="/logout" sec:authorize="isAuthenticated()" class="btn-outline"
+                    style="padding: 0.4rem 1rem; font-size: 0.8rem;">Logout</a>
+            </div>
+        </div>
+        <div class="nav-categories">
+            <a href="/"><span class="icon icon-home"></span> Home</a>
+            <a href="/category/Electronics"><span class="icon icon-monitor"></span> Electronics</a>
+            <a href="/category/Fashion"><span class="icon icon-scissors"></span> Fashion</a>
+            <a href="/category/Home %26 Kitchen"><span class="icon icon-coffee"></span> Kitchen</a>
+            <a href="/category/Beauty %26 Personal Care"><span class="icon icon-beauty"></span> Beauty</a>
+            <a href="/category/Sports %26 Fitness"><span class="icon icon-dumbbell"></span> Sports</a>
+        </div>
+    </nav>
+
     <div class="container">
-        <h2>Order History</h2>
-        <a href="/">Back to Home</a>
-        <table th:if="${not #lists.isEmpty(orders)}">
-            <thead>
-                <tr>
-                    <th>Order ID</th>
-                    <th>Date</th>
-                    <th>Total Amount</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="order : ${orders}">
-                    <td th:text="${order.id}"></td>
-                    <td th:text="${#temporals.format(order.createdAt, 'dd-MM-yyyy HH:mm')}"></td>
-                    <td th:text="${order.totalAmount}"></td>
-                    <td th:text="${order.status}"></td>
-                </tr>
-            </tbody>
-        </table>
-        <p th:if="${#lists.isEmpty(orders)}">No orders found.</p>
+        <div class="cart-card">
+            <h1><span class="icon-wrap" style="background: rgba(99, 102, 241, 0.2); color: #818cf8;"><span
+                        class="icon icon-package icon-lg"></span></span> My Orders</h1>
+
+            <div th:if="${not #lists.isEmpty(orders)}" class="cart-items">
+                <div th:each="order : ${orders}" class="cart-item"
+                    style="display: flex !important; flex-direction: column; gap: 1rem;">
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <div>
+                            <div style="font-size: 1.1rem; font-weight: 800;" th:text="'Order #' + ${order.id}">Order
+                                #123</div>
+                            <div style="font-size: 0.82rem; opacity: 0.6; margin-top: 0.2rem;"
+                                th:text="${#temporals.format(order.orderDate, 'dd MMM yyyy, hh:mm a')}">01 Jan 2024
+                            </div>
+                        </div>
+                        <div th:classappend="'status-badge status-' + ${order.status}" th:text="${order.status}">
+                            PENDING</div>
+                    </div>
+
+                    <div th:each="item : ${order.items}"
+                        style="display: flex; gap: 1.2rem; align-items: center; width: 100%; padding: 0.5rem 0; border-top: 1px solid rgba(255,255,255,0.06);">
+                        <div class="item-img-wrap" style="width: 60px; height: 60px; flex-shrink: 0;">
+                            <img th:if="${item.productImageUrl != null}" th:src="${item.productImageUrl}"
+                                th:alt="${item.productName}"
+                                style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" />
+                            <span th:if="${item.productImageUrl == null}"
+                                style="font-size: 1.5rem; display:flex; align-items:center; justify-content:center; width:100%; height:100%;"><span
+                                    class="icon icon-package icon-lg"></span></span>
+                        </div>
+                        <div style="flex: 1;">
+                            <a th:href="@{/orders/item/{iid}(iid=${item.id})}" class="item-name"
+                                th:text="${item.productName}">Product</a>
+                            <div style="font-size: 0.82rem; opacity: 0.6;">Qty:
+                                <span th:text="${item.quantity}">1</span>
+                            </div>
+                        </div>
+                        <div class="item-price" th:text="${'&#8377;' + item.price}">&#8377;0</div>
+                    </div>
+
+                    <div style="text-align: right; font-weight: 800; margin-top: 0.5rem;">
+                        Total: <span th:text="${'&#8377;' + order.totalAmount}">&#8377;0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="empty-cart" th:if="${#lists.isEmpty(orders)}">
+                <p>You haven't placed any orders yet. Start shopping!</p>
+                <a href="/products" class="btn-browse"><span class="icon icon-bag"></span> Browse Products</a>
+            </div>
+        </div>
     </div>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            body.setAttribute('data-theme', 'dark');
+            themeToggle.textContent = '\u2600';
+        }
+        themeToggle.addEventListener('click', () => {
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.setAttribute('data-theme', 'light');
+                themeToggle.textContent = '\u263E';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '\u2600';
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+    </script>
 </body>
 
 </html>

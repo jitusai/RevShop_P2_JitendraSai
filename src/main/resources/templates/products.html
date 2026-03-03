@@ -1,32 +1,171 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
 <head>
-    <title>Products</title>
+    <meta charset="UTF-8">
+    <title>Browse Products - RevShop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/global.css}">
 </head>
-<body>
 
-<h2>Products</h2>
+<body data-theme="light">
+    <!-- ── NAVIGATION ── -->
+    <nav>
+        <div class="nav-top">
+            <a href="/" class="logo"><span class="icon icon-cart"></span> RevShop</a>
 
-<a href="/products/add">Add Product</a>
+            <div class="search-container">
+                <form action="/search" method="get">
+                    <input type="text" name="keyword" placeholder="Search for products, brands and more"
+                        th:value="${keyword}">
+                    <button type="submit"><span class="icon icon-search"></span></button>
+                </form>
+            </div>
 
-<table border="1">
-    <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Price</th>
-        <th>Actions</th>
-    </tr>
+            <div class="user-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle Dark Mode">&#9790;</button>
+                <a href="/cart" sec:authorize="hasRole('BUYER')" title="Cart"><span class="icon icon-cart"></span>
+                    Cart</a>
+                <a href="/favorites" sec:authorize="hasRole('BUYER')" title="Wishlist"><span
+                        class="icon icon-heart"></span> Wishlist</a>
+                <a href="/orders" sec:authorize="hasRole('BUYER')" title="My Orders"><span
+                        class="icon icon-package"></span> My Orders</a>
+                <a href="/products/seller" sec:authorize="hasRole('SELLER')" title="My Products"><span
+                        class="icon icon-bag"></span> My Products</a>
+                <a href="/orders/seller" sec:authorize="hasRole('SELLER')" title="Manage Orders"><span
+                        class="icon icon-package"></span> Orders</a>
+                <a href="/products/add" sec:authorize="hasRole('SELLER')" title="Add Product"><span
+                        class="icon icon-plus-circle"></span> Add</a>
+                <a href="/notifications" sec:authorize="isAuthenticated()" title="Notifications"><span
+                        class="icon icon-bell"></span></a>
+                <a href="/profile" sec:authorize="isAuthenticated()" title="Profile">
+                    <span class="icon icon-user"></span> <span th:text="${#authentication.name}">User</span>
+                </a>
+                <a href="/login" class="btn-login" sec:authorize="!isAuthenticated()">Login</a>
+                <a href="/logout" sec:authorize="isAuthenticated()" class="btn-outline"
+                    style="padding: 0.4rem 1rem; font-size: 0.8rem;">Logout</a>
+            </div>
+        </div>
 
-    <tr th:each="p : ${products}">
-        <td th:text="${p.id}"></td>
-        <td th:text="${p.name}"></td>
-        <td th:text="${p.price}"></td>
-        <td>
-            <a th:href="@{/products/edit/{id}(id=${p.id})}">Edit</a>
-            <a th:href="@{/products/delete/{id}(id=${p.id})}">Delete</a>
-        </td>
-    </tr>
-</table>
+        <div class="nav-categories">
+            <a href="/"><span class="icon icon-home"></span> Home</a>
+            <a href="/category/Electronics"><span class="icon icon-monitor"></span> Electronics</a>
+            <a href="/category/Fashion"><span class="icon icon-scissors"></span> Fashion</a>
+            <a href="/category/Home %26 Kitchen"><span class="icon icon-coffee"></span> Kitchen</a>
+            <a href="/category/Beauty %26 Personal Care"><span class="icon icon-beauty"></span> Beauty</a>
+            <a href="/category/Sports %26 Fitness"><span class="icon icon-dumbbell"></span> Sports</a>
+        </div>
+    </nav>
 
+    <div class="container">
+        <!-- ── Feedback Messages ── -->
+        <div th:if="${errorMsg}" class="alert-error">
+            <span th:text="${errorMsg}">Error</span>
+        </div>
+        <div th:if="${successMsg}" class="alert-success">
+            <span th:text="${successMsg}">Success</span>
+        </div>
+
+        <div class="page-header">
+            <h2>
+                <span class="icon-wrap" style="background: rgba(15, 118, 110, 0.1); color: var(--accent-teal);">
+                    <span class="icon icon-bag"></span>
+                </span>
+                <span th:text="${(isSellerView != null and isSellerView) ? 'My Products' : 'All Products'}">All
+                    Products</span>
+            </h2>
+            <a href="/products/add" class="btn-add-cart" sec:authorize="hasRole('SELLER')"
+                style="padding: 0.7rem 1.5rem;"><span class="icon icon-plus"></span> Add Product</a>
+        </div>
+
+        <!-- ── PRODUCT GRID ── -->
+        <div class="products-grid" th:if="${not #lists.isEmpty(products)}">
+            <div class="product-card" th:each="p : ${products}" th:onclick="|location.href='/products/${p.id}'|"
+                style="cursor:pointer">
+
+                <!-- Image -->
+                <div class="card-img-wrap">
+                    <img th:if="${p.imageUrl != null}" th:src="${p.imageUrl}" th:alt="${p.name}" />
+                    <div class="card-img-placeholder" th:unless="${p.imageUrl != null}">
+                        <span class="icon icon-package icon-2x" style="opacity: 0.3;"></span>
+                    </div>
+                </div>
+
+                <!-- Body -->
+                <div class="card-body">
+                    <span class="card-cat"
+                        th:text="${p.categoryName != null ? p.categoryName : 'General'}">Category</span>
+                    <div class="card-name" th:text="${p.name}">Product Name</div>
+                    <div class="card-desc" th:if="${p.description != null and !p.description.isEmpty()}"
+                        th:text="${p.description}">Description</div>
+
+                    <div class="card-price-row">
+                        <span class="card-price" th:text="${'₹' + p.getEffectivePrice()}">₹0</span>
+                        <span class="card-mrp" th:if="${p.isDiscounted()}" th:text="${'₹' + p.price}">MRP</span>
+                    </div>
+
+                    <span class="card-stock stock-ok" th:if="${p.quantity != null and p.quantity > 10}"
+                        th:text="${'✓ In Stock (' + p.quantity + ')'}">In Stock</span>
+                    <span class="card-stock stock-low"
+                        th:if="${p.quantity != null and p.quantity > 0 and p.quantity <= 10}"
+                        th:text="${'⚠ Only ' + p.quantity + ' left!'}">Low</span>
+                    <span class="card-stock stock-none" th:if="${p.quantity == null or p.quantity == 0}">✗ Out of
+                        Stock</span>
+                </div>
+
+                <!-- Footer actions -->
+                <div class="card-footer"
+                    style="padding: 1rem; border-top: 1px solid var(--card-border); display: flex; gap: 0.5rem;">
+                    <a th:href="@{/products/{id}(id=${p.id})}" class="btn-view"
+                        style="flex: 1; text-align: center; text-decoration: none; font-weight: 700; color: var(--accent-teal);">View
+                        Details</a>
+                    <a th:href="@{/products/edit/{id}(id=${p.id})}" class="btn-edit" sec:authorize="hasRole('SELLER')"
+                        title="Edit"><span class="icon icon-edit"></span></a>
+                    <a th:href="@{/products/delete/{id}(id=${p.id})}" class="btn-delete"
+                        sec:authorize="hasRole('SELLER')"
+                        onclick="event.stopPropagation(); return confirm('Delete this product?')" title="Delete"><span
+                            class="icon icon-trash"></span></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty -->
+        <div class="empty-state" th:if="${#lists.isEmpty(products)}" style="text-align: center; padding: 4rem 2rem;">
+            <div class="emoji" style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.3;">
+                <span class="icon icon-package icon-3x"></span>
+            </div>
+            <p style="font-size: 1.2rem; opacity: 0.7;">No products yet.<br>
+                <a href="/products/add" sec:authorize="hasRole('SELLER')"
+                    style="color: var(--accent-teal); font-weight: 600; text-decoration: none;">Add your first
+                    product!</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+
+        // Check local storage for theme
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            body.setAttribute('data-theme', 'dark');
+            themeToggle.textContent = '☀️';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.setAttribute('data-theme', 'light');
+                themeToggle.textContent = '🌙';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '☀️';
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+    </script>
 </body>
+
 </html>

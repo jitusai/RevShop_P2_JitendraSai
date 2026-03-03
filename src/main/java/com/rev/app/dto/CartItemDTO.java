@@ -14,6 +14,7 @@ public class CartItemDTO {
     private int quantity;
     private int productStock;
     private double totalPrice;
+    private String productImageUrl;
 
     public Long getId() {
         return id;
@@ -61,5 +62,13 @@ public class CartItemDTO {
 
     public void setTotalPrice(double totalPrice) {
         this.totalPrice = totalPrice;
+    }
+
+    public String getProductImageUrl() {
+        return productImageUrl;
+    }
+
+    public void setProductImageUrl(String productImageUrl) {
+        this.productImageUrl = productImageUrl;
     }
 }

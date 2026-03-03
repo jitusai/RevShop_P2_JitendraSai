@@ -61,7 +61,7 @@ public class HomeController {
         return "notifications";
     }
 
-    @PostMapping({ "/notifications/{id}/acknowledge", "/buyer/notifications/mark-read",
+    @PostMapping({ "/notifications/{id}/acknowledge", "/notifications/{id}/read", "/buyer/notifications/mark-read",
             "/buyer/notifications/{id}/acknowledge" })
     public String acknowledgeNotification(@PathVariable(required = false) Long id) {
         if (id != null) {

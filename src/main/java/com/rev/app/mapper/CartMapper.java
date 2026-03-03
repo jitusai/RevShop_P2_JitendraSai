@@ -34,6 +34,7 @@ public class CartMapper {
                 item.getProduct() != null && item.getProduct().getQuantity() != null ? item.getProduct().getQuantity()
                         : 0);
         dto.setTotalPrice(item.getTotalPrice() != null ? item.getTotalPrice().doubleValue() : 0.0);
+        dto.setProductImageUrl(item.getProduct() != null ? item.getProduct().getImageUrl() : null);
         return dto;
     }
 

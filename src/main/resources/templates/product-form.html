@@ -2,99 +2,344 @@
 <html xmlns:th="http://www.thymeleaf.org">
 
 <head>
-  <title>Product Form - RevShop</title>
+  <meta charset="UTF-8">
+  <title th:text="${product.id == null ? 'Add Product - RevShop' : 'Edit Product - RevShop'}">Product Form - RevShop
+  </title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background-color: #f4f4f9;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
-    .form-container {
-      background: white;
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: linear-gradient(135deg, #0f766e 0%, #134e4a 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .form-wrapper {
+      background: rgba(255, 255, 255, 0.97);
+      backdrop-filter: blur(12px);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+      width: 100%;
+      max-width: 540px;
+      overflow: hidden;
+    }
+
+    .form-header {
+      background: linear-gradient(135deg, #0f766e 0%, #134e4a 100%);
+      padding: 1.5rem 2rem;
+      color: white;
+    }
+
+    .form-header h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .form-header a {
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      font-size: 0.85rem;
+      display: inline-block;
+      margin-top: 0.3rem;
+    }
+
+    .form-body {
       padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      width: 400px;
     }
 
     .form-group {
-      margin-bottom: 1rem;
+      margin-bottom: 1.1rem;
     }
 
     label {
       display: block;
-      margin-bottom: .5rem;
+      margin-bottom: .4rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: #374151;
     }
 
-    input,
+    input[type="text"],
+    input[type="number"],
     textarea,
     select {
       width: 100%;
-      padding: .5rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      padding: .6rem .85rem;
+      border: 1.5px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      color: #111827;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background: #f9fafb;
     }
 
-    button {
+    input:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: #0f766e;
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15);
+      background: white;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    /* ── Image Upload Zone ─────────── */
+    .image-upload-zone {
+      border: 2px dashed #d1d5db;
+      border-radius: 10px;
+      padding: 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      background: #f9fafb;
+    }
+
+    .image-upload-zone:hover {
+      border-color: #0f766e;
+      background: rgba(15, 118, 110, 0.04);
+    }
+
+    .image-upload-zone input[type="file"] {
+      display: none;
+    }
+
+    .image-upload-zone .upload-icon {
+      font-size: 2rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .image-upload-zone p {
+      font-size: 0.85rem;
+      color: #6b7280;
+      margin: 0;
+    }
+
+    .image-upload-zone span {
+      color: #0f766e;
+      font-weight: 600;
+    }
+
+    /* existing image preview */
+    .current-image-preview {
+      margin-bottom: 0.75rem;
+      text-align: center;
+    }
+
+    .current-image-preview img {
+      max-height: 160px;
+      max-width: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .current-image-preview p {
+      font-size: 0.78rem;
+      color: #6b7280;
+      margin-top: 0.3rem;
+    }
+
+    /* new image preview */
+    #imagePreview {
+      display: none;
+      margin-top: 0.75rem;
+      text-align: center;
+    }
+
+    #imagePreview img {
+      max-height: 160px;
+      max-width: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    /* ── Price row ─────────────────── */
+    .price-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .stock-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    /* ── Submit button ─────────────── */
+    .btn-submit {
       width: 100%;
-      padding: .75rem;
-      background-color: #28a745;
+      padding: .8rem;
+      background: linear-gradient(135deg, #0f766e 0%, #134e4a 100%);
       color: white;
       border: none;
-      border-radius: 4px;
+      border-radius: 9px;
+      font-size: 1rem;
+      font-weight: 700;
       cursor: pointer;
+      margin-top: 0.4rem;
+      transition: opacity 0.2s, transform 0.1s;
+      letter-spacing: 0.3px;
     }
 
-    button:hover {
-      background-color: #218838;
+    .btn-submit:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+
+    .btn-submit:active {
+      transform: translateY(0);
+    }
+
+    .cancel-link {
+      display: block;
+      text-align: center;
+      margin-top: 0.85rem;
+      color: #6b7280;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    .cancel-link:hover {
+      color: #374151;
     }
   </style>
 </head>
 
 <body>
-  <div class="form-container">
-    <h2 th:text="${product.id == null ? 'Add Product' : 'Edit Product'}">Product Form</h2>
-    <form th:action="${product.id == null ? '/products/save' : '/products/update'}" th:object="${product}"
-      method="post">
-      <input type="hidden" th:field="*{id}" />
-      <div class="form-group">
-        <label>Name</label>
-        <input type="text" th:field="*{name}" required />
-      </div>
-      <div class="form-group">
-        <label>Description</label>
-        <textarea th:field="*{description}"></textarea>
-      </div>
-      <div class="form-group">
-        <label>Category</label>
-        <select th:field="*{category.id}">
-          <option th:each="cat : ${categories}" th:value="${cat.id}" th:text="${cat.name}"></option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>MRP (Base Price)</label>
-        <input type="number" step="0.01" th:field="*{price}" required />
-      </div>
-      <div class="form-group">
-        <label>Selling Price (Discounted Price)</label>
-        <input type="number" step="0.01" th:field="*{discountedPrice}" />
-      </div>
-      <div class="form-group">
-        <label>Quantity</label>
-        <input type="number" th:field="*{quantity}" required />
-      </div>
-      <div class="form-group">
-        <label>Low Stock Threshold</label>
-        <input type="number" th:field="*{stockThreshold}" />
-      </div>
-      <button type="submit" th:text="${product.id == null ? 'Save Product' : 'Update Product'}">Submit</button>
-    </form>
-    <a href="/products">Cancel</a>
+  <div class="form-wrapper">
+    <div class="form-header">
+      <h2 th:text="${product.id == null ? 'Add New Product' : 'Edit Product'}">Product Form</h2>
+      <a href="/"><span class="icon icon-home"></span> Home</a>
+    </div>
+
+    <div class="form-body">
+      <form th:action="@{${product.id == null ? '/products/add' : '/products/update'}}" method="post"
+        enctype="multipart/form-data">
+
+        <!-- Hidden ID for update -->
+        <input type="hidden" name="id" th:value="${product.id}" />
+
+        <div class="form-group">
+          <label>Product Name</label>
+          <input type="text" name="name" th:value="${product.name}" placeholder="e.g. Sony WH-1000XM5" required />
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea name="description" rows="3" placeholder="Describe the product…"
+            th:text="${product.description}"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Category</label>
+          <select name="categoryId">
+            <option value="">-- Select Category --</option>
+            <option th:each="cat : ${categories}" th:value="${cat.id}" th:text="${cat.name}"
+              th:selected="${product.categoryId != null and product.categoryId == cat.id}">
+            </option>
+          </select>
+        </div>
+
+        <div class="price-row">
+          <div class="form-group">
+            <label>MRP (₹)</label>
+            <input type="number" step="0.01" name="price" th:value="${product.price}" placeholder="0.00" required />
+          </div>
+          <div class="form-group">
+            <label>Selling Price (₹)</label>
+            <input type="number" step="0.01" name="discountedPrice" th:value="${product.discountedPrice}"
+              placeholder="Optional" />
+          </div>
+        </div>
+
+        <div class="stock-row">
+          <div class="form-group">
+            <label>Quantity</label>
+            <input type="number" name="quantity" th:value="${product.quantity}" placeholder="0" required />
+          </div>
+          <div class="form-group">
+            <label>Low Stock Alert</label>
+            <input type="number" name="stockThreshold" th:value="${product.stockThreshold}" placeholder="e.g. 5" />
+          </div>
+        </div>
+
+        <!-- Product Image -->
+        <div class="form-group">
+          <label>Product Image</label>
+
+          <!-- Existing image thumbnail (edit mode) -->
+          <div class="current-image-preview" th:if="${product.imageUrl != null}">
+            <img th:src="${product.imageUrl}" alt="Current product image" />
+            <p>Current image — upload a new one to replace it</p>
+          </div>
+
+          <!-- Upload zone -->
+          <div class="image-upload-zone" onclick="document.getElementById('imageFile').click()">
+            <input type="file" id="imageFile" name="imageFile" accept="image/*" onchange="previewImage(event)" />
+            <div class="upload-icon"><span class="icon icon-camera icon-xl"></span></div>
+            <p><span>Click to upload</span> or drag & drop</p>
+            <p>PNG, JPG, WEBP up to 5 MB</p>
+          </div>
+
+          <!-- New image preview -->
+          <div id="imagePreview">
+            <img id="previewImg" src="#" alt="New image preview" />
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit"
+          th:text="${product.id == null ? 'Save Product' : 'Update Product'}">Submit</button>
+      </form>
+
+      <a href="/products" class="cancel-link">← Cancel</a>
+    </div>
   </div>
+
+  <script>
+    function previewImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        document.getElementById('previewImg').src = e.target.result;
+        document.getElementById('imagePreview').style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Drag & drop
+    const zone = document.querySelector('.image-upload-zone');
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = '#0f766e'; });
+    zone.addEventListener('dragleave', () => { zone.style.borderColor = '#d1d5db'; });
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.style.borderColor = '#d1d5db';
+      const dt = e.dataTransfer;
+      if (dt.files.length) {
+        document.getElementById('imageFile').files = dt.files;
+        previewImage({ target: document.getElementById('imageFile') });
+      }
+    });
+  </script>
 </body>
 
 </html>
