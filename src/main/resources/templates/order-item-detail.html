@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${product != null ? product.name + ' - Order Detail' : 'Order Detail - RevShop'}">Order Detail -
+        RevShop</title>
+    <link rel="stylesheet" th:href="@{/css/global.css}">
+    <style>
+        .order-detail-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-premium);
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            margin-top: 1.5rem;
+        }
+
+        @media (max-width: 720px) {
+            .order-detail-card {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .order-context-banner {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 1.2rem 1.5rem;
+            margin-top: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(12px);
+        }
+
+        .order-info h2 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .order-info p {
+            font-size: 0.85rem;
+            opacity: 0.65;
+            margin-top: 0.2rem;
+        }
+
+        .image-panel {
+            background: rgba(255, 255, 255, 0.04);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2.5rem;
+            border-right: 1px solid var(--glass-border);
+        }
+
+        .image-panel img {
+            max-width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: var(--radius-sm);
+        }
+
+        .details-panel {
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .detail-product-name {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--text-main);
+            line-height: 1.2;
+        }
+
+        .price-paid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .price-label {
+            font-size: 0.8rem;
+            opacity: 0.65;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+        }
+
+        .price-value {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: var(--accent-emerald);
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .meta-item h4 {
+            font-size: 0.72rem;
+            opacity: 0.6;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 800;
+            margin-bottom: 0.4rem;
+        }
+
+        .meta-item p {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .description-block {
+            background: rgba(255, 255, 255, 0.04);
+            border-left: 3px solid #0f766e;
+            padding: 1.2rem 1.5rem;
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            line-height: 1.7;
+            font-size: 0.95rem;
+            opacity: 0.85;
+        }
+
+        .view-product-link {
+            color: #0f766e;
+            font-weight: 700;
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+
+        .view-product-link:hover {
+            color: #14b8a6;
+        }
+
+        .review-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        .review-section h3 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+        }
+
+        .review-locked {
+            text-align: center;
+            opacity: 0.6;
+            padding: 1rem 0;
+        }
+    </style>
+</head>
+
+<body data-theme="light">
+
+    <!-- ── NAVIGATION ── -->
+    <nav>
+        <div class="nav-top">
+            <a href="/" class="logo"><span class="icon icon-cart"></span> RevShop</a>
+
+            <div class="search-container">
+                <form action="/search" method="get">
+                    <input type="text" name="keyword" placeholder="Search for products, brands and more"
+                        th:value="${keyword}">
+                    <button type="submit"><span class="icon icon-search"></span></button>
+                </form>
+            </div>
+
+            <div class="user-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle Dark Mode">&#9790;</button>
+                <a href="/cart" sec:authorize="hasRole('BUYER')" title="Cart"><span class="icon icon-cart"></span>
+                    Cart</a>
+                <a href="/favorites" sec:authorize="hasRole('BUYER')" title="Wishlist"><span
+                        class="icon icon-heart"></span> Wishlist</a>
+                <a href="/orders" sec:authorize="hasRole('BUYER')" title="My Orders"><span
+                        class="icon icon-package"></span> My Orders</a>
+                <a href="/notifications" sec:authorize="isAuthenticated()" title="Notifications"><span
+                        class="icon icon-bell"></span></a>
+                <a href="/profile" sec:authorize="isAuthenticated()" title="Profile">
+                    <span class="icon icon-user"></span> <span th:text="${#authentication.name}">User</span>
+                </a>
+                <a href="/login" class="btn-login" sec:authorize="!isAuthenticated()">Login</a>
+                <a href="/logout" sec:authorize="isAuthenticated()" class="btn-outline"
+                    style="padding: 0.4rem 1rem; font-size: 0.8rem;">Logout</a>
+            </div>
+        </div>
+
+        <div class="nav-categories">
+            <a href="/"><span class="icon icon-home"></span> Home</a>
+            <a href="/orders" sec:authorize="hasRole('BUYER')"><span class="icon icon-arrow-left"></span> Back to
+                Orders</a>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <!-- Order Context Banner -->
+        <div class="order-context-banner" th:if="${order != null}">
+            <div class="order-info">
+                <h2 th:text="'Order #' + ${order.id}">Order #12345</h2>
+                <p th:text="'Purchased on ' + ${#temporals.format(order.createdAt, 'dd MMM yyyy, hh:mm a')}">01 Jan
+                    2024</p>
+            </div>
+            <div th:classappend="'status-badge status-' + ${order.status}" th:text="${order.status}">DELIVERED</div>
+        </div>
+
+        <!-- Product Detail Card -->
+        <div class="order-detail-card" th:if="${orderItem != null}">
+            <div class="image-panel">
+                <img th:if="${product.imageUrl != null}" th:src="${product.imageUrl}" th:alt="${product.name}" />
+                <span th:if="${product.imageUrl == null}" style="font-size: 4rem;"><span
+                        class="icon icon-package icon-2x"></span></span>
+            </div>
+
+            <div class="details-panel">
+                <h1 class="detail-product-name" th:text="${product.name}">Product Name</h1>
+
+                <div class="price-paid">
+                    <span class="price-label">Price paid (at time of purchase)</span>
+                    <span class="price-value" th:text="'₹' + ${orderItem.price}">₹0</span>
+                </div>
+
+                <div class="meta-grid">
+                    <div class="meta-item">
+                        <h4>Quantity</h4>
+                        <p th:text="${orderItem.quantity}">1</p>
+                    </div>
+                    <div class="meta-item">
+                        <h4>Subtotal</h4>
+                        <p th:text="'₹' + ${orderItem.price * orderItem.quantity}">₹0</p>
+                    </div>
+                </div>
+
+                <div class="description-block" th:if="${product.description != null}" th:text="${product.description}">
+                    Product description goes here...
+                </div>
+
+                <a th:href="@{/products/{id}(id=${product.id})}" class="view-product-link">
+                    View Current Product Listing →
+                </a>
+            </div>
+        </div>
+
+        <!-- Review Section -->
+        <div class="review-section" sec:authorize="hasRole('BUYER')" th:if="${product != null}">
+            <div th:if="${canReview}">
+                <h3 th:text="${myReview != null ? 'Edit Your Review' : 'Write a Review'}">Write a Review</h3>
+                <form th:action="@{/products/{id}/review(id=${product.id})}" method="post"
+                    enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>Rating</label>
+                        <select name="rating" required>
+                            <option value="5" th:selected="${myReview != null and myReview.rating == 5}">★★★★★ (5/5)
+                            </option>
+                            <option value="4" th:selected="${myReview != null and myReview.rating == 4}">★★★★☆ (4/5)
+                            </option>
+                            <option value="3" th:selected="${myReview != null and myReview.rating == 3}">★★★☆☆ (3/5)
+                            </option>
+                            <option value="2" th:selected="${myReview != null and myReview.rating == 2}">★★☆☆☆ (2/5)
+                            </option>
+                            <option value="1" th:selected="${myReview != null and myReview.rating == 1}">★☆☆☆☆ (1/5)
+                            </option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Comment</label>
+                        <textarea name="comment" rows="4" placeholder="How was your experience?"
+                            th:text="${myReview != null ? myReview.comment : ''}"></textarea>
+                    </div>
+                    <button type="submit" class="btn-review"
+                        th:text="${myReview != null ? 'Update Review' : 'Submit Review'}">Submit Review</button>
+                </form>
+            </div>
+            <div th:unless="${canReview}" class="review-locked">
+                <span class="icon icon-lock"></span> You can write a review once the order is
+                <strong>DELIVERED</strong>.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            body.setAttribute('data-theme', 'dark');
+            themeToggle.textContent = '\u2600';
+        }
+        themeToggle.addEventListener('click', () => {
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.setAttribute('data-theme', 'light');
+                themeToggle.textContent = '\u263E';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '\u2600';
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+    </script>
+</body>
+
+</html>

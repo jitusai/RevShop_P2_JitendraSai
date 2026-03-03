@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <title>My Favorites - RevShop</title>
+    <link rel="stylesheet" th:href="@{/css/global.css}">
+</head>
+
+<body data-theme="light">
+
+    <!-- ── NAVIGATION ── -->
+    <nav>
+        <div class="nav-top">
+            <a href="/" class="logo"><span class="icon icon-cart"></span> RevShop</a>
+
+            <div class="search-container">
+                <form action="/search" method="get">
+                    <input type="text" name="keyword" placeholder="Search for products, brands and more"
+                        th:value="${keyword}">
+                    <button type="submit"><span class="icon icon-search"></span></button>
+                </form>
+            </div>
+
+            <div class="user-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle Dark Mode">&#9790;</button>
+                <a href="/cart" sec:authorize="hasRole('BUYER')" title="Cart"><span class="icon icon-cart"></span>
+                    Cart</a>
+                <a href="/favorites" sec:authorize="hasRole('BUYER')" title="Wishlist"><span
+                        class="icon icon-heart"></span> Wishlist</a>
+                <a href="/orders" sec:authorize="hasRole('BUYER')" title="My Orders"><span
+                        class="icon icon-package"></span> My Orders</a>
+                <a href="/products/seller" sec:authorize="hasRole('SELLER')" title="My Products"><span
+                        class="icon icon-bag"></span> My Products</a>
+                <a href="/orders/seller" sec:authorize="hasRole('SELLER')" title="Manage Orders"><span
+                        class="icon icon-package"></span> Orders</a>
+                <a href="/products/add" sec:authorize="hasRole('SELLER')" title="Add Product"><span
+                        class="icon icon-plus-circle"></span> Add</a>
+                <a href="/notifications" sec:authorize="isAuthenticated()" title="Notifications"><span
+                        class="icon icon-bell"></span></a>
+                <a href="/profile" sec:authorize="isAuthenticated()" title="Profile">
+                    <span class="icon icon-user"></span> <span th:text="${#authentication.name}">User</span>
+                </a>
+                <a href="/login" class="btn-login" sec:authorize="!isAuthenticated()">Login</a>
+                <a href="/logout" sec:authorize="isAuthenticated()" class="btn-outline"
+                    style="padding: 0.4rem 1rem; font-size: 0.8rem;">Logout</a>
+            </div>
+        </div>
+
+        <div class="nav-categories">
+            <a href="/"><span class="icon icon-home"></span> Home</a>
+            <a href="/category/Electronics"><span class="icon icon-monitor"></span> Electronics</a>
+            <a href="/category/Fashion"><span class="icon icon-scissors"></span> Fashion</a>
+            <a href="/category/Home %26 Kitchen"><span class="icon icon-coffee"></span> Kitchen</a>
+            <a href="/category/Beauty %26 Personal Care"><span class="icon icon-beauty"></span> Beauty</a>
+            <a href="/category/Sports %26 Fitness"><span class="icon icon-dumbbell"></span> Sports</a>
+        </div>
+    </nav>
+
+    <!-- Flash toast -->
+    <div th:if="${favMsg}" th:text="${favMsg}" class="toast"></div>
+
+    <div class="container">
+        <div class="favorites-card">
+            <h1><span class="icon-wrap" style="background: rgba(244, 63, 94, 0.2); color: var(--accent-rose);"><span
+                        class="icon icon-heart icon-lg"></span></span>
+                My Favorites</h1>
+
+            <div th:if="${not #lists.isEmpty(favorites)}" class="favorites-grid">
+                <div th:each="f : ${favorites}" class="favorite-item">
+                    <div class="fav-img-wrap">
+                        <img th:if="${f.product.imageUrl != null}" th:src="${f.product.imageUrl}"
+                            th:alt="${f.product.name}" class="fav-img" />
+                        <div th:if="${f.product.imageUrl == null}" class="fav-img-placeholder icon-wrap icon-large">
+                            <span class="icon icon-package icon-2x"></span>
+                        </div>
+                    </div>
+
+                    <div class="fav-body">
+                        <div class="card-cat"
+                            th:text="${f.product.category != null ? f.product.category.name : 'Uncategorized'}">Category
+                        </div>
+                        <a th:href="@{/products/{id}(id=${f.product.id})}" class="card-name"
+                            th:text="${f.product.name}">Product Name</a>
+                        <div class="card-price-row">
+                            <span class="card-price"
+                                th:text="${'&#8377;' + (f.product.discountedPrice != null ? f.product.discountedPrice : f.product.price)}">
+                                &#8377;0</span>
+                            <span class="card-mrp" th:if="${f.product.discountedPrice != null}"
+                                th:text="${'&#8377;' + f.product.price}">&#8377;0</span>
+                        </div>
+
+                        <div class="actions" style="margin-top: auto; display: flex; gap: 1rem;">
+                            <a th:href="@{/products/{id}(id=${f.product.id})}" class="btn-primary"
+                                style="flex:2; font-size: 0.9rem; padding: 0.8rem;">View Details</a>
+                            <form th:action="@{/favorites/remove}" method="post" style="flex:1;">
+                                <input type="hidden" name="favoriteId" th:value="${f.id}">
+                                <button type="submit" class="btn-remove"
+                                    style="width: 100%; height: 100%;">Remove</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="empty-favorites" th:if="${#lists.isEmpty(favorites)}">
+                <p>You haven't added any favorites yet. Start exploring!</p>
+                <a href="/products" class="btn-browse">Browse Products</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            body.setAttribute('data-theme', 'dark');
+            themeToggle.textContent = '\u2600';
+        }
+        themeToggle.addEventListener('click', () => {
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.setAttribute('data-theme', 'light');
+                themeToggle.textContent = '\u263E';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '\u2600';
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+    </script>
+
+</body>
+
+</html>

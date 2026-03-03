@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Order Confirmed - RevShop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, .2);
+            padding: 3rem 2.5rem;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #43e97b, #38f9d7);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 8px 24px rgba(67, 233, 123, .35);
+        }
+
+        h1 {
+            font-size: 1.9rem;
+            font-weight: 800;
+            color: #1a1a2e;
+            margin-bottom: .6rem;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .detail-box {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            margin: 1.25rem 0;
+            text-align: left;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: .5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: #6b7280;
+            font-size: .875rem;
+        }
+
+        .detail-value {
+            font-weight: 700;
+            color: #1a1a2e;
+            font-size: .9rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: .25rem .65rem;
+            border-radius: 20px;
+            font-size: .78rem;
+            font-weight: 700;
+        }
+
+        .badge-green {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-blue {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-yellow {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .note {
+            color: #9ca3af;
+            font-size: .85rem;
+            margin: 1rem 0 1.5rem;
+        }
+
+        .actions {
+            display: flex;
+            gap: .75rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: .75rem 1.75rem;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: .95rem;
+            text-decoration: none;
+            transition: opacity .2s, transform .1s;
+        }
+
+        .btn:hover {
+            opacity: .88;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0f766e, #134e4a);
+            color: white;
+        }
+
+        .btn-outline {
+            border: 2px solid #0f766e;
+            color: #0f766e;
+            background: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="success-icon"><span class="icon icon-check-circle icon-xl" style="color: white;"></span></div>
+        <h1>Order Confirmed!</h1>
+        <p class="subtitle">Thank you! Your purchase has been placed successfully.</p>
+
+        <div class="detail-box">
+            <!-- Payment Method - dynamic from flash attribute -->
+            <div class="detail-row">
+                <span class="detail-label">Payment Method</span>
+                <span class="detail-value">
+                    <!-- DIGITAL_PAYMENT -->
+                    <th:block th:if="${paymentMethod == 'DIGITAL_PAYMENT'}">
+                        <span class="badge badge-blue"><span class="icon icon-smartphone"></span> Digital / UPI</span>
+                    </th:block>
+                    <!-- CREDIT_CARD -->
+                    <th:block th:if="${paymentMethod == 'CREDIT_CARD'}">
+                        <span class="badge badge-blue"><span class="icon icon-credit-card"></span> Credit Card</span>
+                    </th:block>
+                    <!-- DEBIT_CARD -->
+                    <th:block th:if="${paymentMethod == 'DEBIT_CARD'}">
+                        <span class="badge badge-blue"><span class="icon icon-credit-card"></span> Debit Card</span>
+                    </th:block>
+                    <!-- COD / default -->
+                    <th:block th:if="${paymentMethod == null or paymentMethod == 'CASH_ON_DELIVERY'}">
+                        <span class="badge badge-yellow"><span class="icon icon-dollar"></span> Cash on Delivery</span>
+                    </th:block>
+                </span>
+            </div>
+
+            <!-- Payment Status -->
+            <div class="detail-row">
+                <span class="detail-label">Payment Status</span>
+                <span class="detail-value">
+                    <span class="badge badge-green" th:if="${paymentStatus == 'SUCCESS'}">✓ Paid</span>
+                    <span class="badge badge-yellow" th:unless="${paymentStatus == 'SUCCESS'}"><span
+                            class="icon icon-clock"></span> Pay on Delivery</span>
+                </span>
+            </div>
+
+            <!-- Order Status -->
+            <div class="detail-row">
+                <span class="detail-label">Order Status</span>
+                <span class="detail-value">
+                    <span class="badge badge-yellow"><span class="icon icon-clock"></span> PENDING — Awaiting
+                        Confirmation</span>
+                </span>
+            </div>
+        </div>
+
+        <p class="note">You'll receive a notification once your order is confirmed and shipped.</p>
+
+        <div class="actions">
+            <a href="/orders" class="btn btn-primary"><span class="icon icon-package"></span> View My Orders</a>
+            <a href="/" class="btn btn-outline"><span class="icon icon-home"></span> Go Home</a>
+        </div>
+    </div>
+</body>
+
+</html>

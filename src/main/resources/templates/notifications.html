@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Notifications - RevShop</title>
+    <link rel="stylesheet" th:href="@{/css/global.css}">
+    <style>
+        .notif-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin-top: 1.5rem;
+            box-shadow: var(--shadow-premium);
+        }
+
+        .notif-card h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .notif-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 0.4rem;
+        }
+
+        .notif-table thead th {
+            text-align: left;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 800;
+            opacity: 0.9;
+            padding: 0.75rem 1rem;
+        }
+
+        .notif-table tbody tr {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            transition: background 0.15s;
+        }
+
+        .notif-table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .notif-table tbody tr.unread {
+            background: rgba(15, 118, 110, 0.15);
+            /* More distinct */
+        }
+
+        .notif-table td {
+            padding: 1rem;
+            vertical-align: middle;
+        }
+
+        .notif-table td:first-child {
+            border-radius: 12px 0 0 12px;
+        }
+
+        .notif-table td:last-child {
+            border-radius: 0 12px 12px 0;
+        }
+
+        .notif-msg {
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .notif-time {
+            font-size: 0.78rem;
+            opacity: 0.8;
+        }
+
+        .btn-ack {
+            padding: 0.5rem 1.2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-ack:hover {
+            background: rgba(255, 255, 255, 0.18);
+        }
+
+        .empty-box {
+            text-align: center;
+            padding: 3rem 1rem;
+            opacity: 0.65;
+        }
+
+        .empty-box p {
+            font-size: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        [data-theme="light"] .notif-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-color: #e2e8f0;
+            color: #1a202c;
+            /* Ensure dark text */
+        }
+
+        [data-theme="light"] .notif-table tbody tr {
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        [data-theme="light"] .notif-table tbody tr:hover {
+            background: rgba(0, 0, 0, 0.04);
+        }
+
+        [data-theme="light"] .notif-table tbody tr.unread {
+            background: rgba(15, 118, 110, 0.12);
+        }
+
+        [data-theme="light"] .btn-ack {
+            background: rgba(0, 0, 0, 0.06);
+            border-color: rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="light"] .btn-ack:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body data-theme="light">
+
+    <!-- ── NAVIGATION ── -->
+    <nav>
+        <div class="nav-top">
+            <a href="/" class="logo"><span class="icon icon-cart"></span> RevShop</a>
+            <div class="search-container">
+                <form action="/search" method="get">
+                    <input type="text" name="keyword" placeholder="Search for products, brands and more">
+                    <button type="submit"><span class="icon icon-search"></span></button>
+                </form>
+            </div>
+            <div class="user-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle Dark Mode">&#9790;</button>
+                <a href="/cart" sec:authorize="hasRole('BUYER')" title="Cart"><span class="icon icon-cart"></span>
+                    Cart</a>
+                <a href="/favorites" sec:authorize="hasRole('BUYER')" title="Wishlist"><span
+                        class="icon icon-heart"></span> Wishlist</a>
+                <a href="/orders" sec:authorize="hasRole('BUYER')" title="My Orders"><span
+                        class="icon icon-package"></span> My Orders</a>
+                <a href="/products/seller" sec:authorize="hasRole('SELLER')" title="My Products"><span
+                        class="icon icon-bag"></span> My Products</a>
+                <a href="/orders/seller" sec:authorize="hasRole('SELLER')" title="Manage Orders"><span
+                        class="icon icon-package"></span> Orders</a>
+                <a href="/products/add" sec:authorize="hasRole('SELLER')" title="Add Product"><span
+                        class="icon icon-plus-circle"></span> Add</a>
+                <a href="/notifications" sec:authorize="isAuthenticated()" class="active" title="Notifications"><span
+                        class="icon icon-bell"></span></a>
+                <a href="/profile" sec:authorize="isAuthenticated()" title="Profile">
+                    <span class="icon icon-user"></span> <span th:text="${#authentication.name}">User</span>
+                </a>
+                <a href="/login" class="btn-login" sec:authorize="!isAuthenticated()">Login</a>
+                <a href="/logout" sec:authorize="isAuthenticated()" class="btn-outline"
+                    style="padding: 0.4rem 1rem; font-size: 0.8rem;">Logout</a>
+            </div>
+        </div>
+        <div class="nav-categories">
+            <a href="/"><span class="icon icon-home"></span> Home</a>
+            <a href="/category/Electronics"><span class="icon icon-monitor"></span> Electronics</a>
+            <a href="/category/Fashion"><span class="icon icon-scissors"></span> Fashion</a>
+            <a href="/category/Home %26 Kitchen"><span class="icon icon-coffee"></span> Kitchen</a>
+            <a href="/category/Beauty %26 Personal Care"><span class="icon icon-beauty"></span> Beauty</a>
+            <a href="/category/Sports %26 Fitness"><span class="icon icon-dumbbell"></span> Sports</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="notif-card">
+            <h1>
+                <span class="icon-wrap" style="background: rgba(251, 191, 36, 0.2); color: var(--accent-gold);"><span
+                        class="icon icon-bell icon-lg"></span></span>
+                Notifications
+            </h1>
+
+            <!-- Notifications Table -->
+            <table class="notif-table" th:if="${not #lists.isEmpty(notifications)}">
+                <thead>
+                    <tr>
+                        <th style="width: 60%;">Message</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="n : ${notifications}" th:classappend="${!n.readStatus ? 'unread' : ''}">
+                        <td>
+                            <div class="notif-msg" th:text="${n.message}">Notification message</div>
+                        </td>
+                        <td>
+                            <div class="notif-time" th:text="${#temporals.format(n.createdAt, 'dd MMM yyyy, hh:mm a')}">
+                                01 Jan 2024</div>
+                        </td>
+                        <td>
+                            <form th:unless="${n.readStatus}" th:action="@{/notifications/{id}/read(id=${n.id})}"
+                                method="post">
+                                <button type="submit" class="btn-ack"><span class="icon icon-check"></span> Mark
+                                    Read</button>
+                            </form>
+                            <span th:if="${n.readStatus}" style="opacity: 0.6; font-size: 0.85rem;"><span
+                                    class="icon icon-check-circle"></span> Read</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Empty State -->
+            <div class="empty-box" th:if="${#lists.isEmpty(notifications)}">
+                <div style="font-size: 2.5rem; margin-bottom: 0.5rem;"><span class="icon icon-bell icon-2x"></span>
+                </div>
+                <p>You're all caught up! No new notifications.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            body.setAttribute('data-theme', 'dark');
+            themeToggle.textContent = '\u2600';
+        }
+        themeToggle.addEventListener('click', () => {
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.setAttribute('data-theme', 'light');
+                themeToggle.textContent = '\u263E';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '\u2600';
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+    </script>
+</body>
+
+</html>

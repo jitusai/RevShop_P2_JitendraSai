@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Your Shopping Cart - RevShop</title>
+    <link rel="stylesheet" th:href="@{/css/global.css}">
+</head>
+
+<body data-theme="light">
+
+    <!-- ── NAVIGATION ── -->
+    <nav>
+        <div class="nav-top">
+            <a href="/" class="logo"><span class="icon icon-cart"></span> RevShop</a>
+
+            <div class="search-container">
+                <form action="/search" method="get">
+                    <input type="text" name="keyword" placeholder="Search for products, brands and more"
+                        th:value="${keyword}">
+                    <button type="submit"><span class="icon icon-search"></span></button>
+                </form>
+            </div>
+
+            <div class="user-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle Dark Mode">&#9790;</button>
+                <a href="/cart" sec:authorize="hasRole('BUYER')" class="active" title="Cart"><span
+                        class="icon icon-cart"></span> Cart</a>
+                <a href="/favorites" sec:authorize="hasRole('BUYER')" title="Wishlist"><span
+                        class="icon icon-heart"></span> Wishlist</a>
+                <a href="/orders" sec:authorize="hasRole('BUYER')" title="My Orders"><span
+                        class="icon icon-package"></span> My Orders</a>
+                <a href="/products/seller" sec:authorize="hasRole('SELLER')" title="My Products"><span
+                        class="icon icon-bag"></span> My Products</a>
+                <a href="/orders/seller" sec:authorize="hasRole('SELLER')" title="Manage Orders"><span
+                        class="icon icon-package"></span> Orders</a>
+                <a href="/products/add" sec:authorize="hasRole('SELLER')" title="Add Product"><span
+                        class="icon icon-plus-circle"></span> Add</a>
+                <a href="/notifications" sec:authorize="isAuthenticated()" title="Notifications"><span
+                        class="icon icon-bell"></span></a>
+                <a href="/profile" sec:authorize="isAuthenticated()" title="Profile">
+                    <span class="icon icon-user"></span> <span th:text="${#authentication.name}">User</span>
+                </a>
+                <a href="/login" class="btn-login" sec:authorize="!isAuthenticated()">Login</a>
+                <a href="/logout" sec:authorize="isAuthenticated()" class="btn-outline"
+                    style="padding: 0.4rem 1rem; font-size: 0.8rem;">Logout</a>
+            </div>
+        </div>
+
+        <div class="nav-categories">
+            <a href="/"><span class="icon icon-home"></span> Home</a>
+            <a href="/category/Electronics"><span class="icon icon-monitor"></span> Electronics</a>
+            <a href="/category/Fashion"><span class="icon icon-scissors"></span> Fashion</a>
+            <a href="/category/Home %26 Kitchen"><span class="icon icon-coffee"></span> Kitchen</a>
+            <a href="/category/Beauty %26 Personal Care"><span class="icon icon-beauty"></span> Beauty</a>
+            <a href="/category/Sports %26 Fitness"><span class="icon icon-dumbbell"></span> Sports</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- ── Feedback Messages ── -->
+        <div th:if="${errorMsg}" class="alert-error">
+            <span th:text="${errorMsg}">Error</span>
+        </div>
+        <div th:if="${successMsg}" class="alert-success">
+            <span th:text="${successMsg}">Success</span>
+        </div>
+
+        <div class="cart-card">
+            <h1>
+                <span class="icon-wrap" style="background: rgba(251, 191, 36, 0.2); color: var(--accent-gold);"><span
+                        class="icon icon-bag icon-lg"></span></span>
+                Your Shopping Cart
+            </h1>
+
+            <div th:if="${cart != null and not #lists.isEmpty(cart.items)}">
+                <div class="cart-items">
+                    <div class="cart-item" th:each="item : ${cart.items}">
+                        <div class="item-img-wrap">
+                            <img th:if="${item.productImageUrl != null}" th:src="${item.productImageUrl}"
+                                th:alt="${item.productName}" />
+                            <div th:unless="${item.productImageUrl != null}" class="item-img-placeholder"><span
+                                    class="icon icon-package icon-2x"></span></div>
+                        </div>
+                        <div class="item-info">
+                            <a th:href="@{/products/{id}(id=${item.productId})}" class="item-name"
+                                th:text="${item.productName}">Product Name</a>
+                            <div class="item-meta">Unit Price:
+                                <strong th:text="${'&#8377;' + (item.totalPrice / item.quantity)}">&#8377;0</strong>
+                            </div>
+                        </div>
+                        <div class="item-qty-actions">
+                            <form action="/cart/update" method="post" class="quantity-controls">
+                                <input type="hidden" name="cartItemId" th:value="${item.id}">
+                                <input type="number" name="quantity" th:value="${item.quantity}" min="1"
+                                    th:max="${item.productStock}" class="quantity-controls">
+                                <button type="submit" class="btn-update">Update</button>
+                            </form>
+                        </div>
+                        <div class="item-subtotal">
+                            <span class="item-subtotal-price" th:text="${'&#8377;' + item.totalPrice}">&#8377;0</span>
+                            <form action="/cart/remove" method="post">
+                                <input type="hidden" name="cartItemId" th:value="${item.id}">
+                                <button type="submit" class="btn-remove">Remove</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cart-summary">
+                    <div>
+                        <div class="summary-label">Subtotal</div>
+                        <div class="summary-total" th:text="${'&#8377;' + cartTotal}">&#8377;0</div>
+                    </div>
+                    <a href="/checkout" class="btn-buy-now" style="font-size: 1.1rem; padding: 1rem 2.5rem;">
+                        <span class="icon icon-lock"></span> Proceed to Checkout
+                    </a>
+                </div>
+            </div>
+
+            <div class="empty-cart" th:if="${cart == null or #lists.isEmpty(cart.items)}">
+                <p>Your cart is looking a bit lonely...</p>
+                <a href="/products" class="btn-browse">Browse Products</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            body.setAttribute('data-theme', 'dark');
+            themeToggle.textContent = '\u2600';
+        }
+        themeToggle.addEventListener('click', () => {
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.setAttribute('data-theme', 'light');
+                themeToggle.textContent = '\u263E';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '\u2600';
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+    </script>
+</body>
+
+</html>

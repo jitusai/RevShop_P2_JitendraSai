@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Checkout - RevShop</title>
+    <style>
+        :root {
+            --bg-gradient-start: #f5f7fa;
+            --bg-gradient-end: #c3cfe2;
+            --text-main: #333;
+            --nav-bg: white;
+            --nav-cat-bg: rgba(0, 0, 0, 0.02);
+            --nav-cat-hover: rgba(0, 0, 0, 0.05);
+            --card-bg: white;
+            --card-border: #eee;
+            --input-bg: white;
+            --input-focus: #764ba2;
+            --btn-login-bg: #764ba2;
+            --btn-login-text: white;
+            --primary-color: #764ba2;
+            --secondary-color: #5d3f80;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --shadow-light: rgba(0, 0, 0, 0.05);
+            --shadow-medium: rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --bg-gradient-start: #1a202c;
+            --bg-gradient-end: #2d3748;
+            --text-main: #e2e8f0;
+            --nav-bg: #2d3748;
+            --nav-cat-bg: rgba(255, 255, 255, 0.05);
+            --nav-cat-hover: rgba(255, 255, 255, 0.1);
+            --card-bg: #4a5568;
+            --card-border: #667eea;
+            --input-bg: #2d3748;
+            --input-focus: #667eea;
+            --btn-login-bg: #667eea;
+            --btn-login-text: white;
+            --primary-color: #667eea;
+            --secondary-color: #5a67d8;
+            --success-color: #48bb78;
+            --error-color: #fc8181;
+            --shadow-light: rgba(0, 0, 0, 0.2);
+            --shadow-medium: rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* ── NAV ──────────────────────────────── */
+        nav {
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            background: var(--nav-bg);
+            box-shadow: 0 2px 10px var(--shadow-medium);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        .nav-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+        }
+
+        nav .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            text-decoration: none;
+            color: var(--primary-color);
+            transition: color 0.3s;
+        }
+
+        .nav-categories {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            padding: 0.6rem 2rem;
+            flex-wrap: wrap;
+            background: var(--nav-cat-bg);
+            transition: background 0.3s;
+        }
+
+        nav a {
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            transition: all 0.2s;
+            opacity: 0.9;
+        }
+
+        .nav-categories a:hover,
+        .user-actions a:hover {
+            background: var(--nav-cat-hover);
+            opacity: 1;
+        }
+
+        .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-actions a {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.4rem;
+            border-radius: 50%;
+            transition: background 0.2s, color 0.3s;
+        }
+
+        .theme-toggle:hover {
+            background: var(--nav-cat-hover);
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 8rem auto 2rem;
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 2rem;
+        }
+
+        .checkout-main,
+        .order-summary {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px var(--shadow-light);
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--primary-color);
+            transition: color 0.3s;
+        }
+
+        .section {
+            margin-bottom: 2.5rem;
+            padding-bottom: 2.5rem;
+            border-bottom: 1px solid var(--card-border);
+            transition: border-color 0.3s;
+        }
+
+        .section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            transition: color 0.3s;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            font-family: inherit;
+            resize: vertical;
+            height: 100px;
+            outline: none;
+            transition: border-color 0.2s, background 0.3s, color 0.3s;
+            background: var(--input-bg);
+            color: var(--text-main);
+        }
+
+        textarea:focus {
+            border-color: var(--input-focus);
+        }
+
+        .payment-methods {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .payment-option {
+            border: 2px solid var(--card-border);
+            border-radius: 12px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--input-bg);
+        }
+
+        .payment-option:hover {
+            border-color: var(--input-focus);
+            background: var(--nav-cat-hover);
+        }
+
+        .payment-option.selected {
+            border-color: var(--input-focus);
+            background: var(--nav-cat-hover);
+        }
+
+        .payment-option input {
+            /* Made radio buttons visible so the user knows they can select them */
+            width: 1.2rem;
+            height: 1.2rem;
+            accent-color: var(--primary-color);
+            cursor: pointer;
+        }
+
+        .payment-label {
+            font-weight: 600;
+        }
+
+        .btn-save-address {
+            margin-top: 1rem;
+            padding: 0.6rem 1.2rem;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-save-address:hover {
+            background: var(--secondary-color);
+        }
+
+        .order-summary {
+            height: fit-content;
+            position: sticky;
+            top: 9rem;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .summary-total {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid var(--card-border);
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            transition: color 0.3s;
+        }
+
+        .btn-pay {
+            display: block;
+            width: 100%;
+            background: var(--success-color);
+            color: white;
+            border: none;
+            padding: 1.2rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 2rem;
+            transition: background 0.2s;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .btn-pay:hover {
+            background: #218838;
+        }
+
+        /* Simulation Modal */
+        #payment-simulation {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .simulation-card {
+            background: var(--card-bg);
+            padding: 3rem;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 50px var(--shadow-medium);
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid var(--card-border);
+            border-top: 6px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 2rem;
+            transition: border-color 0.3s;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .cart-items-preview {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 1.5rem;
+        }
+
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid var(--card-border);
+            font-size: 0.9rem;
+            transition: border-color 0.3s;
+        }
+    </style>
+</head>
+
+<body data-theme="light">
+
+    <nav>
+        <div class="nav-top">
+            <a href="/" class="logo">🛒 RevShop</a>
+            <div class="user-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle Dark Mode">🌙</button>
+                <a href="/cart" sec:authorize="hasRole('BUYER')" title="Cart">🛒 Cart</a>
+                <a href="/favorites" sec:authorize="hasRole('BUYER')" title="Wishlist">❤️ Wishlist</a>
+            </div>
+        </div>
+        <div class="nav-categories">
+            <a href="/products?category=Electronics">Electronics</a>
+            <a href="/products?category=Books">Books</a>
+            <a href="/products?category=Home">Home</a>
+            <a href="/products?category=Fashion">Fashion</a>
+            <a href="/products?category=Sports">Sports</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- ── Feedback Messages ── -->
+        <div th:if="${errorMsg}"
+            style="grid-column: 1 / -1; background:#fee2e2; border:1px solid #ef4444; color:#991b1b; padding:1rem; border-radius:12px; margin-bottom:1rem; font-weight:600;">
+            <span th:text="${errorMsg}">Error</span>
+        </div>
+        <div th:if="${successMsg}"
+            style="grid-column: 1 / -1; background:#d1fae5; border:1px solid #10b981; color:#065f46; padding:1rem; border-radius:12px; margin-bottom:1rem; font-weight:600;">
+            <span th:text="${successMsg}">Success</span>
+        </div>
+        <form id="checkout-form" th:action="@{/checkout/place}" method="post">
+            <!-- Hidden fields for Buy Now flow -->
+            <input type="hidden" name="productId" th:if="${isBuyNow}" th:value="${buyNowProduct.id}" />
+            <input type="hidden" name="quantity" th:if="${isBuyNow}" th:value="${buyNowQuantity}" />
+
+            <div class="checkout-main">
+                <div class="section">
+                    <h2>📍 Shipping Address</h2>
+                    <div class="form-group payment-methods">
+                        <!-- Primary Address -->
+                        <label class="payment-option address-option" id="opt-primary-addr"
+                            th:if="${user.address != null && !user.address.isBlank()}"
+                            th:classappend="${user.address != null && !user.address.isBlank()} ? 'selected' : ''">
+                            <input type="radio" name="addressOption" value="primary"
+                                th:checked="${user.address != null && !user.address.isBlank()}"
+                                onchange="toggleNewAddressField()">
+                            <span class="payment-label">🏠 Primary: <span id="primary-address-text"
+                                    th:text="${user.address}">Address</span></span>
+                        </label>
+
+                        <!-- Additional Addresses -->
+                        <div th:if="${user.additionalAddresses != null && !user.additionalAddresses.isEmpty()}"
+                            style="display: contents;">
+                            <label class="payment-option address-option"
+                                th:each="addr, iterStat : ${user.additionalAddresses}"
+                                th:id="'opt-addr-' + ${iterStat.index}">
+                                <input type="radio" name="addressOption" th:value="${addr}"
+                                    onchange="toggleNewAddressField()">
+                                <span class="payment-label">📌 Saved: <span th:text="${addr}">Address</span></span>
+                            </label>
+                        </div>
+
+                        <!-- New Address -->
+                        <label class="payment-option address-option" id="opt-new-addr"
+                            th:classappend="${user.address == null || user.address.isBlank()} ? 'selected' : ''">
+                            <input type="radio" name="addressOption" value="new"
+                                th:checked="${user.address == null || user.address.isBlank()}"
+                                onchange="toggleNewAddressField()">
+                            <span class="payment-label">➕ Add New Address</span>
+                        </label>
+                    </div>
+
+                    <div class="form-group" id="new-address-container"
+                        th:style="${user.address == null || user.address.isBlank()} ? 'display:block;' : 'display:none;'">
+                        <textarea id="new-address-input" placeholder="Enter your full new delivery address here..."
+                            th:required="${user.address == null || user.address.isBlank()}"></textarea>
+                        <button type="button" class="btn-save-address" onclick="addNewAddressOption()">Save & Use This
+                            Address</button>
+                    </div>
+
+                    <input type="hidden" name="address" id="final-address-input"
+                        th:value="${user.address != null ? user.address : ''}">
+                </div>
+
+                <div class="section">
+                    <h2>💳 Payment Method</h2>
+                    <div class="payment-methods">
+                        <label class="payment-option" id="opt-cod">
+                            <input type="radio" name="paymentMethod" value="CASH_ON_DELIVERY" checked>
+                            <span class="payment-label">💵 Cash on Delivery (COD)</span>
+                        </label>
+                        <label class="payment-option" id="opt-card">
+                            <input type="radio" name="paymentMethod" value="CREDIT_CARD">
+                            <span class="payment-label">💳 Credit / Debit Card</span>
+                        </label>
+                        <label class="payment-option" id="opt-digital">
+                            <input type="radio" name="paymentMethod" value="DIGITAL_PAYMENT">
+                            <span class="payment-label">📱 Digital Payment (UPI/Wallet)</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <div class="order-summary">
+            <h2>🗒 Order Summary</h2>
+            <div class="cart-items-preview">
+                <div th:each="item : ${cart.items}" class="item-row">
+                    <span th:text="${item.productName + ' (x' + item.quantity + ')'}">Product Name</span>
+                    <span th:text="${'₹' + item.totalPrice}">₹0</span>
+                </div>
+            </div>
+
+            <div class="summary-item">
+                <span>Subtotal</span>
+                <span th:text="${'₹' + cartTotal}">₹0</span>
+            </div>
+            <div class="summary-item">
+                <span>Shipping</span>
+                <span style="color: #28a745; font-weight: 600;">FREE</span>
+            </div>
+            <div class="summary-total">
+                <span>Total</span>
+                <span th:text="${'₹' + cartTotal}">₹0</span>
+            </div>
+
+            <button type="button" class="btn-pay" onclick="simulatePayment()">Complete Purchase</button>
+        </div>
+    </div>
+
+    <!-- Payment Simulation Modal -->
+    <div id="payment-simulation">
+        <div class="simulation-card">
+            <div class="spinner"></div>
+            <h3 id="sim-status">Processing Payment...</h3>
+            <p id="sim-sub" style="margin-top: 0.5rem; opacity: 0.7;">Securing your transaction with bank servers.</p>
+        </div>
+    </div>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+
+        // Check local storage for theme
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            body.setAttribute('data-theme', 'dark');
+            themeToggle.textContent = '☀️';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.setAttribute('data-theme', 'light');
+                themeToggle.textContent = '🌙';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '☀️';
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+
+        // Interactive styling for payment options AND address options
+        function attachOptionListeners(selector) {
+            const opts = document.querySelectorAll(selector);
+            opts.forEach(opt => {
+                opt.addEventListener('click', () => {
+                    const currentOpts = document.querySelectorAll(selector);
+                    currentOpts.forEach(o => o.classList.remove('selected'));
+                    opt.classList.add('selected');
+
+                    // Explicitly check the radio button and trigger the address swap
+                    const radio = opt.querySelector('input[type="radio"]');
+                    if (radio) {
+                        radio.checked = true;
+                        if (radio.name === 'addressOption') {
+                            toggleNewAddressField();
+                        }
+                    }
+                });
+            });
+        }
+
+        attachOptionListeners('.payment-methods .payment-option[id^="opt-cod"], .payment-methods .payment-option[id^="opt-card"], .payment-methods .payment-option[id^="opt-digital"]');
+        attachOptionListeners('.payment-methods .address-option');
+
+        // Default select for payment
+        document.getElementById('opt-cod').classList.add('selected');
+
+        function addNewAddressOption() {
+            const input = document.getElementById('new-address-input');
+            const warning = document.getElementById('new-addr-warning');
+            const val = input.value.trim();
+            if (!val) {
+                if (!warning) {
+                    const w = document.createElement('div');
+                    w.id = 'new-addr-warning';
+                    w.style.color = 'var(--error-color)';
+                    w.style.fontSize = '0.85rem';
+                    w.style.marginTop = '0.5rem';
+                    w.innerText = 'Please enter an address first.';
+                    input.parentNode.insertBefore(w, input.nextSibling);
+                }
+                return;
+            }
+            if (warning) warning.remove();
+
+            // Create a new option
+            const newId = 'opt-addr-dynamic-' + Date.now();
+
+            const label = document.createElement('label');
+            label.className = 'payment-option address-option';
+            label.id = newId;
+
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = 'addressOption';
+            radio.value = val;
+            radio.onchange = toggleNewAddressField;
+
+            const span = document.createElement('span');
+            span.className = 'payment-label';
+            span.innerHTML = '📌 New: <span>' + val + '</span>';
+
+            label.appendChild(radio);
+            label.appendChild(span);
+
+            // Insert before the "Add New Address" option
+            const addNewLabel = document.getElementById('opt-new-addr');
+            addNewLabel.parentNode.insertBefore(label, addNewLabel);
+
+            // Attach listener specifically for this dynamically added label
+            label.addEventListener('click', () => {
+                document.querySelectorAll('.payment-methods .address-option').forEach(o => o.classList.remove('selected'));
+                label.classList.add('selected');
+                radio.checked = true;
+                toggleNewAddressField();
+            });
+
+            // Trigger selection of this newly added address
+            label.click();
+
+            // Clear text area to be ready for another potential address
+            input.value = '';
+        }
+
+        function toggleNewAddressField() {
+            const checkedInput = document.querySelector('input[name="addressOption"]:checked');
+            if (!checkedInput) return;
+            const selectedOpt = checkedInput.value;
+            const newAddrContainer = document.getElementById('new-address-container');
+            const newAddrInput = document.getElementById('new-address-input');
+
+            if (selectedOpt === 'new') {
+                newAddrContainer.style.display = 'block';
+                newAddrInput.required = true;
+            } else {
+                newAddrContainer.style.display = 'none';
+                newAddrInput.required = false;
+            }
+        }
+
+        function simulatePayment() {
+            const form = document.getElementById('checkout-form');
+
+            // Set final address logic
+            const selectedAddressOpt = document.querySelector('input[name="addressOption"]:checked').value;
+            const finalAddressInput = document.getElementById('final-address-input');
+            const newAddressInput = document.getElementById('new-address-input');
+
+            if (selectedAddressOpt === 'primary') {
+                finalAddressInput.value = document.getElementById('primary-address-text').innerText;
+            } else if (selectedAddressOpt === 'new') {
+                if (!newAddressInput.value.trim()) {
+                    newAddressInput.reportValidity();
+                    return; // Stop if required but empty
+                }
+                finalAddressInput.value = newAddressInput.value;
+            } else {
+                finalAddressInput.value = selectedAddressOpt;
+            }
+
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+            const modal = document.getElementById('payment-simulation');
+            const statusText = document.getElementById('sim-status');
+            const subText = document.getElementById('sim-sub');
+
+            modal.style.display = 'flex';
+
+            if (paymentMethod === 'CASH_ON_DELIVERY') {
+                statusText.innerText = "Confirming Order...";
+                subText.innerText = "Setting up your Cash on Delivery arrangement.";
+            } else {
+                statusText.innerText = "Simulating Secure Gateway...";
+            }
+
+            setTimeout(() => {
+                statusText.innerText = "Verification Success!";
+                statusText.style.color = "#28a745";
+                subText.innerText = "Taking you to your confirmation page.";
+
+                setTimeout(() => {
+                    form.submit();
+                }, 1000);
+            }, 2500);
+        }
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <title>My Profile - RevShop</title>
+    <link rel="stylesheet" th:href="@{/css/global.css}">
+</head>
+
+<body data-theme="light">
+    <!-- ── NAVIGATION ── -->
+    <nav>
+        <div class="nav-top">
+            <a href="/" class="logo"><span class="icon icon-cart"></span> RevShop</a>
+
+            <div class="search-container">
+                <form action="/search" method="get">
+                    <input type="text" name="keyword" placeholder="Search for products, brands and more">
+                    <button type="submit"><span class="icon icon-search"></span></button>
+                </form>
+            </div>
+
+            <div class="user-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle Dark Mode">&#9790;</button>
+                <a href="/cart" sec:authorize="hasRole('BUYER')" title="Cart"><span class="icon icon-cart"></span>
+                    Cart</a>
+                <a href="/favorites" sec:authorize="hasRole('BUYER')" title="Wishlist"><span
+                        class="icon icon-heart"></span> Wishlist</a>
+                <a href="/orders" sec:authorize="hasRole('BUYER')" title="My Orders"><span
+                        class="icon icon-package"></span> My Orders</a>
+                <a href="/products/seller" sec:authorize="hasRole('SELLER')" title="My Products"><span
+                        class="icon icon-bag"></span> My Products</a>
+                <a href="/orders/seller" sec:authorize="hasRole('SELLER')" title="Manage Orders"><span
+                        class="icon icon-package"></span> Orders</a>
+                <a href="/products/add" sec:authorize="hasRole('SELLER')" title="Add Product"><span
+                        class="icon icon-plus-circle"></span> Add</a>
+                <a href="/notifications" sec:authorize="isAuthenticated()" title="Notifications"><span
+                        class="icon icon-bell"></span></a>
+                <a href="/profile" sec:authorize="isAuthenticated()" class="active" title="Profile">
+                    <span class="icon icon-user"></span> <span th:text="${#authentication.name}">User</span>
+                </a>
+                <a href="/login" class="btn-login" sec:authorize="!isAuthenticated()">Login</a>
+                <a href="/logout" sec:authorize="isAuthenticated()" class="btn-outline"
+                    style="padding: 0.4rem 1rem; font-size: 0.8rem;">Logout</a>
+            </div>
+        </div>
+
+        <div class="nav-categories">
+            <a href="/"><span class="icon icon-home"></span> Home</a>
+            <a href="/category/Electronics"><span class="icon icon-monitor"></span> Electronics</a>
+            <a href="/category/Fashion"><span class="icon icon-scissors"></span> Fashion</a>
+            <a href="/category/Home %26 Kitchen"><span class="icon icon-coffee"></span> Kitchen</a>
+            <a href="/category/Beauty %26 Personal Care"><span class="icon icon-beauty"></span> Beauty</a>
+            <a href="/category/Sports %26 Fitness"><span class="icon icon-dumbbell"></span> Sports</a>
+        </div>
+    </nav>
+    <div class="profile-card">
+        <h2><span class="icon icon-user"></span> My Profile</h2>
+
+
+        <div th:if="${param.success_edit}" class="alert alert-success">
+            <span class="icon icon-check-circle"></span> Address updated successfully!
+        </div>
+        <div th:if="${param.success_delete}" class="alert alert-success">
+            <span class="icon icon-trash"></span> Address deleted successfully!
+        </div>
+
+        <div class="info-group">
+            <label>Name</label>
+            <p th:text="${user.name}">User Name</p>
+        </div>
+
+        <div class="info-group">
+            <label>Email</label>
+            <p th:text="${user.email}">user@example.com</p>
+        </div>
+
+        <div class="info-group">
+            <label>Role</label>
+            <p th:text="${#strings.replace(user.role, 'ROLE_', '')}">BUYER</p>
+        </div>
+
+        <!-- Seller Specific Details -->
+        <div th:if="${#strings.toString(user.role) == 'ROLE_SELLER'}">
+            <div class="info-group">
+                <label>GST Number</label>
+                <p th:text="${user.gstNumber != null ? user.gstNumber : 'Not Provided'}">22AAAAA0000A1Z5</p>
+            </div>
+            <div class="info-group">
+                <label>Distributor Name</label>
+                <p th:text="${user.sellerDistributorName != null ? user.sellerDistributorName : 'Not Provided'}">Global
+                    Traders</p>
+            </div>
+        </div>
+
+        <div class="info-group">
+            <label>Shipping Address</label>
+            <div th:if="${user.address != null}" class="address-box">
+                <p th:text="${user.address}">123 Street, City</p>
+                <form th:action="@{/profile/address/delete}" method="post" onsubmit="return confirm('Remove address?')">
+                    <button type="submit" class="btn btn-danger" style="margin-top: 0.5rem; font-size: 0.8rem;">Delete
+                        Address</button>
+                </form>
+            </div>
+            <p th:if="${user.address == null}" style="color: #888; font-style: italic;">No address saved.</p>
+        </div>
+
+        <div class="address-update-section">
+            <h4>Update Address</h4>
+            <form th:action="@{/profile/address/update}" method="post">
+                <textarea name="address" rows="3" placeholder="Enter your full address..." th:text="${user.address}"
+                    required></textarea>
+                <button type="submit" class="btn btn-primary">Save Address</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            body.setAttribute('data-theme', 'dark');
+            themeToggle.textContent = '\u2600';
+        }
+
+        themeToggle.addEventListener('click', () => {
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.setAttribute('data-theme', 'light');
+                themeToggle.textContent = '\u263E';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '\u2600';
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+    </script>
+</body>
+
+</html>

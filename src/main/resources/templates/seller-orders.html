@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Orders - RevShop</title>
+    <link rel="stylesheet" th:href="@{/css/global.css}">
+    <style>
+        .seller-orders-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            margin-top: 1.5rem;
+            box-shadow: var(--shadow-premium);
+        }
+
+        .seller-orders-card h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            margin-bottom: 2rem;
+        }
+
+        .orders-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 0.6rem;
+        }
+
+        .orders-table thead th {
+            text-align: left;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 800;
+            opacity: 0.8;
+            padding: 1rem;
+            border-bottom: 2px solid var(--glass-border);
+        }
+
+        .orders-table tbody tr {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .orders-table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .orders-table td {
+            padding: 1.2rem;
+            vertical-align: middle;
+        }
+
+        .order-id {
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: var(--accent-gold);
+        }
+
+        .product-names {
+            font-weight: 600;
+            color: var(--accent-teal);
+            line-height: 1.4;
+            display: block;
+            margin-top: 0.4rem;
+        }
+
+        .buyer-name {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-weight: 600;
+        }
+
+        .price-tag {
+            font-weight: 800;
+            font-size: 1.2rem;
+            color: var(--accent-emerald);
+        }
+
+        .badge {
+            padding: 0.4rem 1rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: inline-block;
+        }
+
+        /* Status colors with high contrast */
+        .badge-PENDING {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-CONFIRMED {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-SHIPPED {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-DELIVERED {
+            background: #ccfbf1;
+            color: #115e59;
+        }
+
+        .badge-CANCELLED {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .btn-update {
+            padding: 0.5rem 1.2rem;
+            background: var(--accent-teal);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(15, 118, 110, 0.3);
+        }
+
+        .btn-update:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(15, 118, 110, 0.4);
+        }
+
+        .status-select {
+            padding: 0.5rem;
+            border-radius: 10px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.1);
+            color: inherit;
+            font-weight: 600;
+            outline: none;
+        }
+
+        [data-theme="light"] {
+            --bg-table-row: rgba(0, 0, 0, 0.03);
+            --bg-table-row-hover: rgba(0, 0, 0, 0.06);
+        }
+
+        [data-theme="light"] .seller-orders-card {
+            background: rgba(255, 255, 255, 0.98);
+            color: #1a202c;
+            border-color: #e2e8f0;
+        }
+
+        [data-theme="light"] .orders-table tbody tr {
+            background: var(--bg-table-row);
+        }
+
+        [data-theme="light"] .orders-table tbody tr:hover {
+            background: var(--bg-table-row-hover);
+        }
+
+        [data-theme="light"] .orders-table thead th {
+            color: #4a5568;
+            opacity: 1;
+        }
+
+        [data-theme="light"] .status-select {
+            background: white;
+            border-color: #cbd5e0;
+        }
+
+        [data-theme="light"] .product-names {
+            color: #0f766e;
+            /* Stronger teal for light mode */
+        }
+    </style>
+</head>
+
+<body data-theme="light">
+
+    <!-- ── NAVIGATION ── -->
+    <nav>
+        <div class="nav-top">
+            <a href="/" class="logo"><span class="icon icon-cart"></span> RevShop</a>
+            <div class="search-container">
+                <form action="/search" method="get">
+                    <input type="text" name="keyword" placeholder="Search for products, brands and more">
+                    <button type="submit"><span class="icon icon-search"></span></button>
+                </form>
+            </div>
+            <div class="user-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle Dark Mode">&#9790;</button>
+                <a href="/products/seller" sec:authorize="hasRole('SELLER')" title="My Products"><span
+                        class="icon icon-bag"></span> My Products</a>
+                <a href="/favorites" sec:authorize="hasRole('BUYER')" title="Wishlist"><span
+                        class="icon icon-heart"></span> Wishlist</a>
+                <a href="/orders" sec:authorize="hasRole('BUYER')" title="My Orders"><span
+                        class="icon icon-package"></span> My Orders</a>
+                <a href="/orders/seller" sec:authorize="hasRole('SELLER')" class="active" title="Manage Orders"><span
+                        class="icon icon-package"></span> Orders</a>
+                <a href="/products/add" sec:authorize="hasRole('SELLER')" title="Add Product"><span
+                        class="icon icon-plus-circle"></span> Add</a>
+                <a href="/notifications" sec:authorize="isAuthenticated()" title="Notifications"><span
+                        class="icon icon-bell"></span></a>
+                <a href="/profile" sec:authorize="isAuthenticated()" title="Profile">
+                    <span class="icon icon-user"></span> <span th:text="${#authentication.name}">User</span>
+                </a>
+                <a href="/logout" sec:authorize="isAuthenticated()" class="btn-outline"
+                    style="padding: 0.4rem 1rem; font-size: 0.8rem;">Logout</a>
+            </div>
+        </div>
+        <div class="nav-categories">
+            <a href="/"><span class="icon icon-home"></span> Home</a>
+            <a href="/category/Electronics"><span class="icon icon-monitor"></span> Electronics</a>
+            <a href="/category/Fashion"><span class="icon icon-scissors"></span> Fashion</a>
+            <a href="/category/Home %26 Kitchen"><span class="icon icon-coffee"></span> Kitchen</a>
+            <a href="/category/Beauty %26 Personal Care"><span class="icon icon-beauty"></span> Beauty</a>
+            <a href="/category/Sports %26 Fitness"><span class="icon icon-dumbbell"></span> Sports</a>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 1200px;">
+        <div class="seller-orders-card">
+            <h1>
+                <span class="icon-wrap"
+                    style="background: rgba(15, 118, 110, 0.2); color: var(--accent-teal); padding: 0.8rem;">
+                    <span class="icon icon-package icon-lg"></span>
+                </span>
+                Order Management
+            </h1>
+
+            <!-- Feedback Messages -->
+            <div th:if="${errorMsg}" class="alert-error" th:text="${errorMsg}"
+                style="margin-bottom: 1.5rem; padding: 1rem; border-radius: 12px; background: rgba(244, 63, 94, 0.1); color: #e11d48; font-weight: 600;">
+            </div>
+            <div th:if="${successMsg}" class="alert-success" th:text="${successMsg}"
+                style="margin-bottom: 1.5rem; padding: 1rem; border-radius: 12px; background: rgba(16, 185, 129, 0.1); color: #059669; font-weight: 600;">
+            </div>
+
+            <!-- Orders Table -->
+            <table class="orders-table" th:if="${not #lists.isEmpty(orders)}">
+                <thead>
+                    <tr>
+                        <th style="width: 35%;">Order & Products</th>
+                        <th>Buyer</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="order : ${orders}">
+                        <td>
+                            <div class="order-id">#<span th:text="${order.id}">ID</span></div>
+                            <div style="font-size: 0.8rem; opacity: 0.7;"
+                                th:text="${#temporals.format(order.orderDate, 'dd MMM yyyy, hh:mm a')}">Date</div>
+                            <span class="product-names">
+                                <span th:each="pName, iter : ${order.productNames}"
+                                    th:text="${pName + (!iter.last ? ', ' : '')}">Product</span>
+                            </span>
+                        </td>
+                        <td>
+                            <div class="buyer-name">
+                                <span class="icon icon-user" style="opacity: 0.6;"></span>
+                                <span th:text="${order.buyerName}">Buyer</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="price-tag" th:text="${'&#8377;' + order.totalAmount}">&#8377;0</div>
+                        </td>
+                        <td>
+                            <span class="badge" th:classappend="${'badge-' + order.status}"
+                                th:text="${order.status}">Status</span>
+                        </td>
+                        <td>
+                            <!-- Update Form -->
+                            <form th:if="${order.status != 'DELIVERED' and order.status != 'CANCELLED'}"
+                                th:action="@{/orders/{id}/status(id=${order.id})}" method="post"
+                                style="display:flex; gap:0.6rem; align-items:center;">
+                                <select name="status" class="status-select">
+                                    <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}"
+                                        th:selected="${order.status == s.name()}">Status</option>
+                                </select>
+                                <button type="submit" class="btn-update">Update</button>
+                            </form>
+                            <div th:if="${order.status == 'DELIVERED'}"
+                                style="color: #0f766e; font-weight: 800; display: flex; align-items: center; gap: 0.4rem;">
+                                <span class="icon icon-check-circle"></span> Completed
+                            </div>
+                            <div th:if="${order.status == 'CANCELLED'}"
+                                style="color: #e11d48; font-weight: 800; display: flex; align-items: center; gap: 0.4rem;">
+                                <span class="icon icon-x"></span> Cancelled
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Empty State -->
+            <div class="empty-box" th:if="${#lists.isEmpty(orders)}"
+                style="text-align:center; padding: 5rem 1rem; opacity: 0.7;">
+                <div style="font-size: 4rem; margin-bottom: 1.5rem;"><span class="icon icon-package icon-2x"></span>
+                </div>
+                <h3>No orders yet</h3>
+                <p>When customers buy your products, they'll appear here.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            body.setAttribute('data-theme', 'dark');
+            themeToggle.textContent = '\u2600';
+        }
+        themeToggle.addEventListener('click', () => {
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.setAttribute('data-theme', 'light');
+                themeToggle.innerHTML = '&#9790;';
+                localStorage.setItem('theme', 'light');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '\u2600';
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+    </script>
+</body>
+
+</html>
