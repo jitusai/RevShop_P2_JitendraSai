@@ -29,14 +29,14 @@ public class UserController {
     public String registerUser(@ModelAttribute UserDTO user, RedirectAttributes redirectAttributes, Model model) {
         // Email check
         if (IUserService.findByEmail(user.getEmail()).isPresent()) {
-            model.addAttribute("errorMsg", "u already have the account please login");
+            model.addAttribute("errorMsg", "U already have the account! please login");
             model.addAttribute("user", user);
             return "register";
         }
 
         // Name check
         if (IUserService.existsByName(user.getName())) {
-            model.addAttribute("errorMsg", "choose another name");
+            model.addAttribute("errorMsg", "Please choose another name,This name is already taken");
             model.addAttribute("user", user);
             return "register";
         }
@@ -46,7 +46,7 @@ public class UserController {
         } else {
             IUserService.registerBuyer(user);
         }
-        redirectAttributes.addFlashAttribute("successMsg", "User created successfully! Please login. ✨");
+        redirectAttributes.addFlashAttribute("successMsg", "User created successfully! Please login.");
         return "redirect:/login";
     }
 

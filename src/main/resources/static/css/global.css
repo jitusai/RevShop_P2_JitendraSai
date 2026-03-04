@@ -40,6 +40,13 @@
     --footer-bg: rgba(0, 0, 0, 0.4);
     --btn-login-bg: #4a5568;
     --btn-login-text: #e2e8f0;
+    color-scheme: dark;
+}
+
+/* Fix dropdown option visibility in dark mode */
+[data-theme="dark"] select option {
+    background-color: #2d3748;
+    color: #e2e8f0;
 }
 
 * {
@@ -79,7 +86,10 @@ nav {
 .logo {
     font-size: 1.6rem;
     font-weight: 800;
-    color: white;
+    color: skyblue;
+    /* background: linear-gradient(90deg, #2563eb, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent; */
     text-decoration: none;
     letter-spacing: -1px;
     white-space: nowrap;
@@ -672,7 +682,7 @@ nav a:hover {
     padding: 0.8rem;
     border-radius: 10px;
     border: 1px solid var(--card-border);
-    background: var(--search-bg);
+    background: rgba(0, 0, 0, 0.4);
     color: white;
 }
 

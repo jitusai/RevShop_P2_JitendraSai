@@ -37,7 +37,7 @@ public class ProductController {
     @Value("${file.upload-dir:uploads/products}")
     private String uploadDir;
 
-    // ── Helpers ────────────────────────────────────────────────────────────
+
     /**
      * Saves a multipart image to disk and returns the URL path,
      * e.g. "/uploads/products/abc123.jpg"

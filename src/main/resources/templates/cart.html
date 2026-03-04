@@ -35,9 +35,9 @@
                 <a href="/orders/seller" sec:authorize="hasRole('SELLER')" title="Manage Orders"><span
                         class="icon icon-package"></span> Orders</a>
                 <a href="/products/add" sec:authorize="hasRole('SELLER')" title="Add Product"><span
-                        class="icon icon-plus-circle"></span> Add</a>
+                        class="icon icon-plus-circle"></span> Add Products</a>
                 <a href="/notifications" sec:authorize="isAuthenticated()" title="Notifications"><span
-                        class="icon icon-bell"></span></a>
+                        class="icon icon-bell"></span>Notifications</a>
                 <a href="/profile" sec:authorize="isAuthenticated()" title="Profile">
                     <span class="icon icon-user"></span> <span th:text="${#authentication.name}">User</span>
                 </a>
@@ -54,6 +54,8 @@
             <a href="/category/Home %26 Kitchen"><span class="icon icon-coffee"></span> Kitchen</a>
             <a href="/category/Beauty %26 Personal Care"><span class="icon icon-beauty"></span> Beauty</a>
             <a href="/category/Sports %26 Fitness"><span class="icon icon-dumbbell"></span> Sports</a>
+            <a href="/category/Books"><span class="icon icon-book"></span> Books</a>
+            <a href="/category/Toys %26 Games"><span class="icon icon-gamepad"></span> Toys & Games</a>
         </div>
     </nav>
 

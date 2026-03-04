@@ -316,7 +316,7 @@
     <!-- ── RIGHT: REGISTRATION FORM ── -->
     <div class="reg-panel">
         <div class="reg-card">
-            <h2>Create Account ✨</h2>
+            <h2>Create Account </h2>
             <p class="sub">Join us and start exploring today</p>
 
             <form th:action="@{/register}" th:object="${user}" method="post">
@@ -340,15 +340,16 @@
                     <!-- Phone -->
                     <div class="form-group">
                         <label for="phone">Phone Number</label>
-                        <input id="phone" type="text" th:field="*{phone}" placeholder="+91 9876543210" required>
+                        <input id="phone" type="text" th:field="*{phone}" placeholder="9876543210" minlength="10"
+                            maxlength="10" required>
                     </div>
 
                     <!-- Password -->
                     <div class="form-group">
                         <label for="password">Password</label>
                         <div class="password-wrapper">
-                            <input id="password" type="password" th:field="*{password}" placeholder="••••••••" required
-                                style="padding-right: 2.5rem;">
+                            <input id="password" type="password" th:field="*{password}" placeholder="••••••••"
+                                minlength="6" required style="padding-right: 2.5rem;">
                             <span class="toggle-password" id="togglePassword" title="Toggle password visibility">
                                 <svg id="eyeIcon" viewBox="0 0 24 24">
                                     <!-- Default: Eye Closed (Hidden Password) -->
@@ -374,7 +375,7 @@
                     <div id="sellerFields" class="seller-fields">
                         <div class="form-group">
                             <label for="gstNumber">GST Number</label>
-                            <input id="gstNumber" type="text" th:field="*{gstNumber}" placeholder="22AAAAA0000A1Z5">
+                            <input id="gstNumber" type="text" th:field="*{gstNumber}" placeholder="22AAAAA0000A1Z5" minlength="15" maxlength="15" required>
                         </div>
                         <div class="form-group">
                             <label for="distributorName">Distributor Name</label>
